@@ -32,6 +32,7 @@ body { min-height: 100vh; }
 .auth-form .primary-button { margin-top: 6px; height: 52px; font-size: 14px; }
 .support-link { margin-top: 8px; }
 .notice { line-height: 1.55; }
+.support-account span { text-transform: lowercase; }
 @media (max-width: 560px) {
   .auth-page { padding: 16px; }
   .auth-card { width: min(100%, 430px); padding: 22px 18px; border-radius: 22px; }
