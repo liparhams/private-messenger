@@ -1,13 +1,13 @@
 {
   "name": "messenger",
-  "version": "1.2.1",
+  "version": "2.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "NEXT_TELEMETRY_DISABLED=1 opennextjs-cloudflare build",
+    "build": "NEXT_TELEMETRY_DISABLED=1 next build",
     "start": "next start",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
-    "preview": "opennextjs-cloudflare build && wrangler dev"
+    "deploy": "next build && wrangler deploy",
+    "preview": "next build && wrangler dev"
   },
   "dependencies": {
     "next": "15.5.25",
@@ -16,7 +16,6 @@
     "@supabase/supabase-js": "2.115.0"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "1.20.6",
     "wrangler": "4.129.0"
   },
   "engines": {
