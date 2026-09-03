@@ -5,208 +5,84 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://jcblfgrcsgbdeamogzfc.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
+const FILE_BUCKET = "chat-files";
+const MAX_MESSAGE_LENGTH = 4000;
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
+const MAX_FILENAME_LENGTH = 180;
+
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
-  }
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
 });
 
 const SUPPORT = {
   username: "parham",
   displayName: "Parham Soleimany",
   telegram: "https://t.me/parhamsoleimanybot",
-  utino: "https://utino.org/chat/supportusername",
-  wdner: "https://wdner.co",
-  iparham: "https://iparham.com"
+  utinoSupport: "https://utino.org/chat/supportusername",
+  utino: "https://utino.org",
+  iparham: "https://iparham.com",
+  wdner: "https://wdner.co"
 };
-
-const MAX_MESSAGE_LENGTH = 4000;
-const MAX_FILE_SIZE = 15 * 1024 * 1024;
-const MAX_FILENAME_LENGTH = 180;
-const FILE_BUCKET = "chat-files";
 
 const TEXT = {
   fa: {
-    brand: "Messenger",
-    tagline: "پیام‌رسان",
-    login: "ورود",
-    register: "ثبت‌نام",
-    username: "نام کاربری",
-    usernameHint: "۳ تا ۲۰ کاراکتر، فقط حروف انگلیسی، عدد و _",
-    display: "نام نمایشی",
-    displayHint: "نامی که دیگران می‌بینند",
-    password: "رمز عبور",
-    signIn: "ورود به حساب",
-    create: "ساخت حساب",
-    pleaseWait: "لطفاً صبر کن...",
-    contactQuestion: "راه ارتباطی من برای دیگران نمایش داده شود",
-    optional: "اختیاری",
-    telegram: "تلگرام",
-    instagram: "اینستاگرام",
-    email: "ایمیل",
-    phone: "تلفن",
-    other: "سایر",
-    contactPlaceholder: "مثلاً @username یا شماره",
-    search: "جستجوی کاربران",
-    users: "کاربران",
-    noUsers: "کاربری پیدا نشد",
-    startChat: "یک گفت‌وگو را شروع کن",
-    startChatHint: "یک نفر را از فهرست انتخاب کن.",
-    noMessages: "هنوز پیامی نیست",
-    firstMessage: "اولین پیام را بفرست.",
-    write: "پیامت را بنویس...",
-    support: "پشتیبانی",
-    notifications: "اعلان‌ها",
-    profile: "پروفایل",
-    logout: "خروج",
-    supportTitle: "پشتیبانی",
-    supportText: "برای دریافت کمک از یکی از مسیرهای زیر با پشتیبانی در ارتباط باش.",
-    supportAccount: "پشتیبانی رسمی",
-    supportTelegram: "پشتیبانی در تلگرام",
-    supportWeb: "پشتیبانی در یوتینو",
-    supportUsername: "@parham",
-    noNotifications: "اعلان جدیدی نداری.",
-    back: "بازگشت",
-    loading: "در حال بارگذاری...",
-    close: "بستن",
-    invalidUser: "نام کاربری نامعتبر است.",
-    shortPassword: "رمز عبور باید حداقل ۶ کاراکتر باشد.",
-    registerRequired: "نام نمایشی، نام کاربری و رمز عبور را کامل کن.",
-    displayTooLong: "نام نمایشی بیش از حد طولانی است.",
-    contactRequired: "برای نمایش راه ارتباطی، اطلاعات تماس را وارد کن.",
-    invalidContactType: "نوع راه ارتباطی نامعتبر است.",
-    invalidLogin: "نام کاربری یا رمز عبور اشتباه است.",
-    already: "این نام کاربری قبلاً ثبت شده است.",
-    genericError: "خطایی رخ داد. دوباره تلاش کن.",
-    messageTooLong: "پیام نمی‌تواند بیشتر از ۴۰۰۰ کاراکتر باشد.",
-    messageFailed: "ارسال پیام انجام نشد.",
-    uploadFailed: "ارسال فایل انجام نشد.",
-    fileTooLarge: "حجم فایل بیشتر از ۱۵ مگابایت است.",
-    fileNameTooLong: "نام فایل بیش از حد طولانی است.",
-    file: "فایل",
-    openFile: "باز کردن فایل",
-    signedIn: "ورود موفق بود.",
-    accountCreated: "حساب ساخته شد. حالا وارد شو.",
-    contact: "راه ارتباطی",
-    supportFromError: "ارتباط با پشتیبانی",
-    notificationSupport: "پشتیبانی در دسترس است.",
-    notificationSupportText: "برای گزارش مشکل یا دریافت کمک، پشتیبانی رسمی را باز کن.",
-    signedOut: "از حساب خارج شدی."
+    brand: "Messenger", tagline: "پیام‌رسان", login: "ورود", register: "ثبت‌نام", username: "نام کاربری",
+    usernameHint: "۳ تا ۲۰ کاراکتر، فقط حروف انگلیسی، عدد و _", display: "نام نمایشی", displayHint: "نامی که دیگران می‌بینند",
+    password: "رمز عبور", signIn: "ورود به حساب", create: "ساخت حساب", pleaseWait: "لطفاً صبر کن...",
+    contactQuestion: "راه ارتباطی من برای دیگران نمایش داده شود", optional: "اختیاری", telegram: "تلگرام", instagram: "اینستاگرام",
+    email: "ایمیل", phone: "تلفن", other: "سایر", contactPlaceholder: "مثلاً @username یا شماره", search: "جستجوی کاربران",
+    users: "کاربران", noUsers: "کاربری پیدا نشد", startChat: "یک گفت‌وگو را شروع کن", startChatHint: "یک نفر را از فهرست انتخاب کن.",
+    noMessages: "هنوز پیامی نیست", firstMessage: "اولین پیام را بفرست.", write: "پیامت را بنویس...", send: "ارسال", support: "پشتیبانی",
+    notifications: "اعلان‌ها", profile: "پروفایل", logout: "خروج", supportTitle: "پشتیبانی",
+    supportText: "برای گزارش مشکل یا دریافت کمک، یکی از مسیرهای پشتیبانی را باز کن.", supportTelegram: "پشتیبانی در تلگرام", supportWeb: "پشتیبانی در یوتینو",
+    supportUsername: "@parham", noNotifications: "اعلان جدیدی نداری.", back: "بازگشت", loading: "در حال بارگذاری...", close: "بستن",
+    invalidUser: "نام کاربری نامعتبر است.", shortPassword: "رمز عبور باید حداقل ۶ کاراکتر باشد.", registerRequired: "نام نمایشی، نام کاربری و رمز عبور را کامل کن.",
+    displayTooLong: "نام نمایشی بیش از حد طولانی است.", contactRequired: "برای نمایش راه ارتباطی، اطلاعات تماس را وارد کن.", invalidContactType: "نوع راه ارتباطی نامعتبر است.",
+    invalidLogin: "نام کاربری یا رمز عبور اشتباه است.", already: "این نام کاربری قبلاً ثبت شده است.", genericError: "خطایی رخ داد. دوباره تلاش کن.",
+    messageTooLong: "پیام نمی‌تواند بیشتر از ۴۰۰۰ کاراکتر باشد.", messageFailed: "ارسال پیام انجام نشد.", uploadFailed: "ارسال فایل انجام نشد.",
+    fileTooLarge: "حجم فایل بیشتر از ۱۵ مگابایت است.", fileNameTooLong: "نام فایل بیش از حد طولانی است.", file: "فایل", openFile: "باز کردن فایل",
+    signedIn: "ورود موفق بود.", accountCreated: "حساب ساخته شد. حالا وارد شو.", contact: "راه ارتباطی", supportFromError: "ارتباط با پشتیبانی",
+    notificationSupport: "پشتیبانی در دسترس است.", notificationSupportText: "برای گزارش مشکل یا دریافت کمک، پشتیبانی رسمی را باز کن.", signedOut: "از حساب خارج شدی."
   },
   en: {
-    brand: "Messenger",
-    tagline: "Messaging platform",
-    login: "Sign in",
-    register: "Create account",
-    username: "Username",
-    usernameHint: "3–20 characters, English letters, numbers and _ only",
-    display: "Display name",
-    displayHint: "The name others see",
-    password: "Password",
-    signIn: "Sign in",
-    create: "Create account",
-    pleaseWait: "Please wait...",
-    contactQuestion: "Show my contact method to other users",
-    optional: "Optional",
-    telegram: "Telegram",
-    instagram: "Instagram",
-    email: "Email",
-    phone: "Phone",
-    other: "Other",
-    contactPlaceholder: "e.g. @username or phone",
-    search: "Search users",
-    users: "Users",
-    noUsers: "No users found",
-    startChat: "Start a conversation",
-    startChatHint: "Choose someone from the list.",
-    noMessages: "No messages yet",
-    firstMessage: "Send the first message.",
-    write: "Write a message...",
-    support: "Support",
-    notifications: "Notifications",
-    profile: "Profile",
-    logout: "Sign out",
-    supportTitle: "Support",
-    supportText: "Use one of the options below to contact official support.",
-    supportAccount: "Official support",
-    supportTelegram: "Support on Telegram",
-    supportWeb: "Support on Utino",
-    supportUsername: "@parham",
-    noNotifications: "You have no new notifications.",
-    back: "Back",
-    loading: "Loading...",
-    close: "Close",
-    invalidUser: "Invalid username.",
-    shortPassword: "Password must be at least 6 characters.",
-    registerRequired: "Complete your display name, username and password.",
-    displayTooLong: "Display name is too long.",
-    contactRequired: "Enter contact details to display a contact method.",
-    invalidContactType: "Invalid contact type.",
-    invalidLogin: "Incorrect username or password.",
-    already: "This username is already registered.",
-    genericError: "Something went wrong. Please try again.",
-    messageTooLong: "Messages cannot exceed 4000 characters.",
-    messageFailed: "Message could not be sent.",
-    uploadFailed: "File could not be sent.",
-    fileTooLarge: "File size is over 15 MB.",
-    fileNameTooLong: "File name is too long.",
-    file: "File",
-    openFile: "Open file",
-    signedIn: "Signed in successfully.",
-    accountCreated: "Account created. You can sign in now.",
-    contact: "Contact",
-    supportFromError: "Contact support",
-    notificationSupport: "Support is available.",
-    notificationSupportText: "Open official support to report a problem or get help.",
-    signedOut: "You have signed out."
+    brand: "Messenger", tagline: "Messaging platform", login: "Sign in", register: "Create account", username: "Username",
+    usernameHint: "3–20 characters, English letters, numbers and _ only", display: "Display name", displayHint: "The name others see",
+    password: "Password", signIn: "Sign in", create: "Create account", pleaseWait: "Please wait...",
+    contactQuestion: "Show my contact method to other users", optional: "Optional", telegram: "Telegram", instagram: "Instagram",
+    email: "Email", phone: "Phone", other: "Other", contactPlaceholder: "e.g. @username or phone", search: "Search users",
+    users: "Users", noUsers: "No users found", startChat: "Start a conversation", startChatHint: "Choose someone from the list.",
+    noMessages: "No messages yet", firstMessage: "Send the first message.", write: "Write a message...", send: "Send", support: "Support",
+    notifications: "Notifications", profile: "Profile", logout: "Sign out", supportTitle: "Support",
+    supportText: "Open one of the support options to report a problem or get help.", supportTelegram: "Support on Telegram", supportWeb: "Support on Utino",
+    supportUsername: "@parham", noNotifications: "You have no new notifications.", back: "Back", loading: "Loading...", close: "Close",
+    invalidUser: "Invalid username.", shortPassword: "Password must be at least 6 characters.", registerRequired: "Complete your display name, username and password.",
+    displayTooLong: "Display name is too long.", contactRequired: "Enter contact details to display a contact method.", invalidContactType: "Invalid contact type.",
+    invalidLogin: "Incorrect username or password.", already: "This username is already registered.", genericError: "Something went wrong. Please try again.",
+    messageTooLong: "Messages cannot exceed 4000 characters.", messageFailed: "Message could not be sent.", uploadFailed: "File could not be sent.",
+    fileTooLarge: "File size is over 15 MB.", fileNameTooLong: "File name is too long.", file: "File", openFile: "Open file",
+    signedIn: "Signed in successfully.", accountCreated: "Account created. You can sign in now.", contact: "Contact", supportFromError: "Contact support",
+    notificationSupport: "Support is available.", notificationSupportText: "Open official support to report a problem or get help.", signedOut: "You have signed out."
   }
 };
 
 const CONTACT_TYPES = new Set(["telegram", "instagram", "email", "phone", "other"]);
 
-function usernameEmail(value) {
-  return `${value.trim().toLowerCase()}@messenger.local`;
-}
-
+function usernameEmail(username) { return `${username.trim().toLowerCase()}@messenger.local`; }
+function firstLetter(value) { return (value || "M").trim().slice(0, 1).toUpperCase(); }
 function formatTime(value, lang) {
   if (!value) return "";
-  try {
-    return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-US", {
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(new Date(value));
-  } catch {
-    return "";
-  }
+  try { return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-US", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)); } catch { return ""; }
 }
-
 function authError(error, t) {
   const message = String(error?.message || "").toLowerCase();
   if (message.includes("invalid login credentials")) return t.invalidLogin;
   if (message.includes("already registered") || message.includes("already exists") || message.includes("duplicate")) return t.already;
   if (message.includes("password")) return t.shortPassword;
-  if (message.includes("username")) return t.already;
   return t.genericError;
 }
 
-function firstLetter(value) {
-  return (value || "M").trim().slice(0, 1).toUpperCase();
-}
-
 function Icon({ name }) {
-  const common = {
-    width: 19,
-    height: 19,
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.8,
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    "aria-hidden": true
-  };
+  const common = { width: 19, height: 19, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 1.8, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true };
   const shapes = {
     search: <><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></>,
     bell: <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9" /><path d="M10 21h4" /></>,
@@ -221,52 +97,28 @@ function Icon({ name }) {
   return <svg {...common}>{shapes[name] || shapes.user}</svg>;
 }
 
-function Modal({ title, onClose, children, closeLabel }) {
+function Modal({ title, onClose, closeLabel, children }) {
   useEffect(() => {
-    const onKey = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const closeOnEscape = (event) => event.key === "Escape" && onClose();
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
   }, [onClose]);
-
-  return (
-    <div className="modal-backdrop" onMouseDown={onClose} role="presentation">
-      <div className="modal" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label={title}>
-        <div className="modal-head">
-          <h2>{title}</h2>
-          <button type="button" className="icon-button" onClick={onClose} aria-label={closeLabel}>×</button>
-        </div>
-        <div className="modal-body">{children}</div>
-      </div>
+  return <div className="modal-backdrop" onMouseDown={onClose} role="presentation">
+    <div className="modal" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label={title}>
+      <div className="modal-head"><h2>{title}</h2><button type="button" className="icon-button" onClick={onClose} aria-label={closeLabel}>×</button></div>
+      <div className="modal-body">{children}</div>
     </div>
-  );
+  </div>;
 }
 
 function SupportPanel({ t, onClose }) {
-  return (
-    <Modal title={t.supportTitle} onClose={onClose} closeLabel={t.close}>
-      <div className="support-account">
-        <div className="avatar huge">P</div>
-        <div>
-          <strong>{SUPPORT.displayName}</strong>
-          <span>{t.supportUsername}</span>
-        </div>
-      </div>
-      <p>{t.supportText}</p>
-      <a className="modal-link" href={SUPPORT.telegram} target="_blank" rel="noopener noreferrer">
-        <span>{t.supportTelegram}</span><Icon name="external" />
-      </a>
-      <a className="modal-link" href={SUPPORT.utino} target="_blank" rel="noopener noreferrer">
-        <span>{t.supportWeb}</span><Icon name="external" />
-      </a>
-      <div className="support-sites">
-        <a href={SUPPORT.iparham} target="_blank" rel="noopener noreferrer">iParham</a>
-        <a href={SUPPORT.wdner} target="_blank" rel="noopener noreferrer">WDNER</a>
-        <a href="https://utino.org" target="_blank" rel="noopener noreferrer">Utino</a>
-      </div>
-    </Modal>
-  );
+  return <Modal title={t.supportTitle} onClose={onClose} closeLabel={t.close}>
+    <div className="support-account"><div className="avatar huge">P</div><div><strong>{SUPPORT.displayName}</strong><span>{t.supportUsername}</span></div></div>
+    <p>{t.supportText}</p>
+    <a className="modal-link" href={SUPPORT.telegram} target="_blank" rel="noopener noreferrer"><span>{t.supportTelegram}</span><Icon name="external" /></a>
+    <a className="modal-link" href={SUPPORT.utinoSupport} target="_blank" rel="noopener noreferrer"><span>{t.supportWeb}</span><Icon name="external" /></a>
+    <div className="support-sites"><a href={SUPPORT.iparham} target="_blank" rel="noopener noreferrer">iParham</a><a href={SUPPORT.wdner} target="_blank" rel="noopener noreferrer">WDNER</a><a href={SUPPORT.utino} target="_blank" rel="noopener noreferrer">Utino</a></div>
+  </Modal>;
 }
 
 export default function Home() {
@@ -298,9 +150,9 @@ export default function Home() {
 
   useEffect(() => {
     try {
-      const savedLanguage = localStorage.getItem("messenger-language");
+      const savedLang = localStorage.getItem("messenger-language");
       const savedTheme = localStorage.getItem("messenger-theme");
-      if (savedLanguage === "fa" || savedLanguage === "en") setLang(savedLanguage);
+      if (savedLang === "fa" || savedLang === "en") setLang(savedLang);
       if (savedTheme === "light" || savedTheme === "dark") setDark(savedTheme === "dark");
     } catch {}
   }, []);
@@ -312,17 +164,16 @@ export default function Home() {
     } catch {}
   }, [lang, dark]);
 
-  function reportError(errorObject, fallback) {
-    console.error(errorObject);
-    setError(fallback || t.genericError);
-  }
+  const reportError = (cause, fallback = t.genericError) => {
+    console.error(cause);
+    setError(fallback);
+  };
 
   async function refreshUser(userId) {
     const [profileResult, usersResult] = await Promise.all([
       supabase.from("profiles").select("id, username, display_name, contact_type, contact_value, created_at").eq("id", userId).maybeSingle(),
-      supabase.from("profiles").select("id, username, display_name, contact_type, contact_value, created_at").neq("id", userId).order("username", { ascending: true }).limit(500)
+      supabase.from("profiles").select("id, username, display_name, contact_type, contact_value, created_at").neq("id", userId).order("username").limit(500)
     ]);
-
     if (profileResult.error) throw profileResult.error;
     if (usersResult.error) throw usersResult.error;
     setProfile(profileResult.data || null);
@@ -331,199 +182,113 @@ export default function Home() {
 
   useEffect(() => {
     let active = true;
-
     async function boot() {
       try {
         const { data, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
-        const nextSession = data?.session || null;
         if (!active) return;
+        const nextSession = data?.session || null;
         setSession(nextSession);
         if (nextSession?.user) await refreshUser(nextSession.user.id);
-      } catch (bootError) {
-        if (active) reportError(bootError, t.genericError);
+      } catch (cause) {
+        if (active) reportError(cause);
       } finally {
         if (active) setLoading(false);
       }
     }
-
     boot();
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return;
       setSession(nextSession || null);
       if (!nextSession?.user) {
-        setProfile(null);
-        setUsers([]);
-        setSelected(null);
-        setMessages([]);
-        setUnread({});
+        setProfile(null); setUsers([]); setSelected(null); setMessages([]); setUnread({});
         return;
       }
-      window.setTimeout(() => {
-        if (!active) return;
-        refreshUser(nextSession.user.id).catch((refreshError) => reportError(refreshError, t.genericError));
-      }, 0);
+      window.setTimeout(() => refreshUser(nextSession.user.id).catch((cause) => reportError(cause)), 0);
     });
-
-    return () => {
-      active = false;
-      data?.subscription?.unsubscribe();
-    };
+    return () => { active = false; data?.subscription?.unsubscribe(); };
   }, []);
 
   useEffect(() => {
     if (!session?.user?.id) return;
-    const channel = supabase
-      .channel(`messages-${session.user.id}`)
-      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-        const incoming = payload.new;
-        if (!incoming?.id) return;
-        const isMine = incoming.sender_id === session.user.id;
-        const isForMe = incoming.receiver_id === session.user.id;
-        if (!isMine && !isForMe) return;
-
-        setSelected((currentSelected) => {
-          if (!currentSelected) {
-            if (isForMe) setUnread((current) => ({ ...current, [incoming.sender_id]: (current[incoming.sender_id] || 0) + 1 }));
-            return currentSelected;
-          }
-          const belongs = (incoming.sender_id === session.user.id && incoming.receiver_id === currentSelected.id) || (incoming.sender_id === currentSelected.id && incoming.receiver_id === session.user.id);
-          if (belongs) {
-            setMessages((current) => current.some((item) => item.id === incoming.id) ? current : [...current, incoming]);
-            if (incoming.sender_id === currentSelected.id) setUnread((current) => ({ ...current, [currentSelected.id]: 0 }));
-          } else if (isForMe) {
-            setUnread((current) => ({ ...current, [incoming.sender_id]: (current[incoming.sender_id] || 0) + 1 }));
-          }
-          return currentSelected;
-        });
-      })
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    const channel = supabase.channel(`messages-${session.user.id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+      const incoming = payload.new;
+      if (!incoming?.id) return;
+      const mine = incoming.sender_id === session.user.id;
+      const forMe = incoming.receiver_id === session.user.id;
+      if (!mine && !forMe) return;
+      setSelected((currentSelected) => {
+        if (currentSelected && ((incoming.sender_id === session.user.id && incoming.receiver_id === currentSelected.id) || (incoming.sender_id === currentSelected.id && incoming.receiver_id === session.user.id))) {
+          setMessages((current) => current.some((item) => item.id === incoming.id) ? current : [...current, incoming]);
+          if (incoming.sender_id === currentSelected.id) setUnread((current) => ({ ...current, [currentSelected.id]: 0 }));
+        } else if (forMe) {
+          setUnread((current) => ({ ...current, [incoming.sender_id]: (current[incoming.sender_id] || 0) + 1 }));
+        }
+        return currentSelected;
+      });
+    }).subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [session?.user?.id]);
 
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [messages]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages]);
 
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return users;
-    return users.filter((user) => `${user.username || ""} ${user.display_name || ""}`.toLowerCase().includes(q));
+    return q ? users.filter((user) => `${user.username || ""} ${user.display_name || ""}`.toLowerCase().includes(q)) : users;
   }, [users, search]);
 
   async function login() {
-    setError("");
-    setSuccess("");
-    const normalizedUsername = username.trim().toLowerCase();
-    if (!/^[a-z0-9_]{3,20}$/.test(normalizedUsername)) return setError(t.invalidUser);
+    setError(""); setSuccess("");
+    const u = username.trim().toLowerCase();
+    if (!/^[a-z0-9_]{3,20}$/.test(u)) return setError(t.invalidUser);
     if (password.length < 6) return setError(t.shortPassword);
     setBusy(true);
     try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({ email: usernameEmail(normalizedUsername), password });
+      const { error: loginError } = await supabase.auth.signInWithPassword({ email: usernameEmail(u), password });
       if (loginError) throw loginError;
-      setSuccess(t.signedIn);
-      setPassword("");
-    } catch (loginError) {
-      setError(authError(loginError, t));
-    } finally {
-      setBusy(false);
-    }
+      setSuccess(t.signedIn); setPassword("");
+    } catch (cause) { setError(authError(cause, t)); } finally { setBusy(false); }
   }
 
   async function register() {
-    setError("");
-    setSuccess("");
-    const normalizedUsername = username.trim().toLowerCase();
-    const normalizedDisplayName = displayName.trim();
-    const normalizedContact = contactValue.trim();
-
-    if (!/^[a-z0-9_]{3,20}$/.test(normalizedUsername)) return setError(t.invalidUser);
-    if (!normalizedDisplayName || password.length < 6) return setError(t.registerRequired);
-    if (normalizedDisplayName.length > 80) return setError(t.displayTooLong);
-    if (shareContact && !normalizedContact) return setError(t.contactRequired);
+    setError(""); setSuccess("");
+    const u = username.trim().toLowerCase();
+    const d = displayName.trim();
+    const c = contactValue.trim();
+    if (!/^[a-z0-9_]{3,20}$/.test(u)) return setError(t.invalidUser);
+    if (!d || password.length < 6) return setError(t.registerRequired);
+    if (d.length > 80) return setError(t.displayTooLong);
+    if (shareContact && !c) return setError(t.contactRequired);
     if (shareContact && !CONTACT_TYPES.has(contactType)) return setError(t.invalidContactType);
     setBusy(true);
-
     try {
       const { data, error: signupError } = await supabase.auth.signUp({
-        email: usernameEmail(normalizedUsername),
-        password,
-        options: {
-          data: {
-            username: normalizedUsername,
-            display_name: normalizedDisplayName,
-            contact_type: shareContact ? contactType : null,
-            contact_value: shareContact ? normalizedContact : null
-          }
-        }
+        email: usernameEmail(u), password,
+        options: { data: { username: u, display_name: d, contact_type: shareContact ? contactType : null, contact_value: shareContact ? c : null } }
       });
       if (signupError) throw signupError;
       if (!data?.user) throw new Error("signup_failed");
-
-      setSuccess(t.accountCreated);
-      setAuthMode("login");
-      setUsername(normalizedUsername);
-      setPassword("");
-      setDisplayName("");
-      setShareContact(false);
-      setContactValue("");
-    } catch (signupError) {
-      setError(authError(signupError, t));
-    } finally {
-      setBusy(false);
-    }
+      setSuccess(t.accountCreated); setAuthMode("login"); setUsername(u); setPassword(""); setDisplayName(""); setShareContact(false); setContactValue("");
+    } catch (cause) { setError(authError(cause, t)); } finally { setBusy(false); }
   }
 
   async function openChat(user) {
     if (!session?.user?.id || !user?.id) return;
-    setSelected(user);
-    setMessages([]);
-    setError("");
-    setUnread((current) => ({ ...current, [user.id]: 0 }));
-
-    const { data, error: messagesError } = await supabase
-      .from("messages")
-      .select("id, sender_id, receiver_id, content, message_type, file_name, created_at")
-      .or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${session.user.id})`)
-      .order("created_at", { ascending: true })
-      .limit(500);
-
-    if (messagesError) {
-      reportError(messagesError, t.messageFailed);
-      return;
-    }
-    setMessages(data || []);
+    setSelected(user); setMessages([]); setError(""); setUnread((current) => ({ ...current, [user.id]: 0 }));
+    const { data, error: queryError } = await supabase.from("messages").select("id, sender_id, receiver_id, content, message_type, file_name, created_at").or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${session.user.id})`).order("created_at", { ascending: true }).limit(500);
+    if (queryError) reportError(queryError, t.messageFailed); else setMessages(data || []);
   }
 
   async function sendMessage() {
     const content = message.trim();
     if (!content || !selected || !session?.user?.id || busy) return;
     if (content.length > MAX_MESSAGE_LENGTH) return setError(t.messageTooLong);
-
-    setBusy(true);
-    setError("");
+    setBusy(true); setError("");
     try {
-      const { data, error: insertError } = await supabase
-        .from("messages")
-        .insert({
-          sender_id: session.user.id,
-          receiver_id: selected.id,
-          content,
-          message_type: "text"
-        })
-        .select("id, sender_id, receiver_id, content, message_type, file_name, created_at")
-        .single();
+      const { data, error: insertError } = await supabase.from("messages").insert({ sender_id: session.user.id, receiver_id: selected.id, content, message_type: "text" }).select("id, sender_id, receiver_id, content, message_type, file_name, created_at").single();
       if (insertError) throw insertError;
-      setMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data]);
-      setMessage("");
-    } catch (sendError) {
-      reportError(sendError, t.messageFailed);
-    } finally {
-      setBusy(false);
-    }
+      setMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data]); setMessage("");
+    } catch (cause) { reportError(cause, t.messageFailed); } finally { setBusy(false); }
   }
 
   async function sendFile(event) {
@@ -531,235 +296,80 @@ export default function Home() {
     event.target.value = "";
     if (!file || !selected || !session?.user?.id || busy) return;
     if (file.size > MAX_FILE_SIZE) return setError(t.fileTooLarge);
-
     const originalName = String(file.name || t.file);
     if (originalName.length > MAX_FILENAME_LENGTH) return setError(t.fileNameTooLong);
-
-    setBusy(true);
-    setError("");
+    setBusy(true); setError("");
     let path = "";
     try {
       const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, MAX_FILENAME_LENGTH) || "file";
       path = `${session.user.id}/${crypto.randomUUID()}-${safeName}`;
-      const { error: uploadError } = await supabase.storage.from(FILE_BUCKET).upload(path, file, {
-        upsert: false,
-        contentType: file.type || "application/octet-stream",
-        cacheControl: "3600"
-      });
+      const { error: uploadError } = await supabase.storage.from(FILE_BUCKET).upload(path, file, { upsert: false, contentType: file.type || "application/octet-stream", cacheControl: "3600" });
       if (uploadError) throw uploadError;
-
-      const { data, error: messageError } = await supabase
-        .from("messages")
-        .insert({
-          sender_id: session.user.id,
-          receiver_id: selected.id,
-          content: path,
-          message_type: "file",
-          file_name: originalName
-        })
-        .select("id, sender_id, receiver_id, content, message_type, file_name, created_at")
-        .single();
+      const { data, error: messageError } = await supabase.from("messages").insert({ sender_id: session.user.id, receiver_id: selected.id, content: path, message_type: "file", file_name: originalName }).select("id, sender_id, receiver_id, content, message_type, file_name, created_at").single();
       if (messageError) throw messageError;
       setMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data]);
-    } catch (uploadError) {
-      reportError(uploadError, t.uploadFailed);
-      if (path) {
-        const { error: cleanupError } = await supabase.storage.from(FILE_BUCKET).remove([path]);
-        if (cleanupError) console.error(cleanupError);
-      }
-    } finally {
-      setBusy(false);
-    }
+    } catch (cause) {
+      reportError(cause, t.uploadFailed);
+      if (path) { const { error: cleanupError } = await supabase.storage.from(FILE_BUCKET).remove([path]); if (cleanupError) console.error(cleanupError); }
+    } finally { setBusy(false); }
   }
 
-  async function openFile(messageItem) {
-    if (!messageItem?.content) return;
-    setError("");
-    const { data, error: signedUrlError } = await supabase.storage.from(FILE_BUCKET).createSignedUrl(messageItem.content, 3600, { download: messageItem.file_name || true });
-    if (signedUrlError || !data?.signedUrl) {
-      reportError(signedUrlError, t.uploadFailed);
-      return;
-    }
+  async function openFile(item) {
+    if (!item?.content) return;
+    const { data, error: signedError } = await supabase.storage.from(FILE_BUCKET).createSignedUrl(item.content, 3600, { download: item.file_name || true });
+    if (signedError || !data?.signedUrl) return reportError(signedError, t.uploadFailed);
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
   async function logout() {
     setBusy(true);
-    try {
-      const { error: logoutError } = await supabase.auth.signOut();
-      if (logoutError) throw logoutError;
-      setSuccess(t.signedOut);
-    } catch (logoutError) {
-      reportError(logoutError, t.genericError);
-    } finally {
-      setBusy(false);
-    }
+    try { const { error: logoutError } = await supabase.auth.signOut(); if (logoutError) throw logoutError; setSuccess(t.signedOut); }
+    catch (cause) { reportError(cause); } finally { setBusy(false); }
   }
 
   const direction = lang === "fa" ? "rtl" : "ltr";
+  const totalUnread = Object.values(unread).reduce((sum, value) => sum + value, 0);
 
-  if (loading) {
-    return (
-      <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}>
-        <div className="loading-screen"><div className="brand-mark">M</div><span>{t.loading}</span></div>
-      </main>
-    );
-  }
+  if (loading) return <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}><div className="loading-screen"><div className="brand-mark">M</div><span>{t.loading}</span></div></main>;
 
-  if (!session) {
-    return (
-      <main className={`auth-page ${dark ? "theme-dark" : "theme-light"}`} dir={direction}>
-        <div className="auth-orbit" />
-        <section className="auth-card" aria-label={t.brand}>
-          <header className="auth-top">
-            <div className="brand-lockup">
-              <div className="brand-mark">M</div>
-              <div><div className="brand-name">{t.brand}</div><div className="brand-tagline">{t.tagline}</div></div>
-            </div>
-            <div className="top-actions">
-              <button type="button" className="ghost-button" onClick={() => setLang((value) => value === "fa" ? "en" : "fa")} aria-label="language">{lang === "fa" ? "EN" : "فا"}</button>
-              <button type="button" className="icon-button" onClick={() => setDark((value) => !value)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button>
-            </div>
-          </header>
-
-          <div className="auth-tabs" role="tablist">
-            <button type="button" role="tab" aria-selected={authMode === "login"} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setError(""); }}>{t.login}</button>
-            <button type="button" role="tab" aria-selected={authMode === "register"} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setError(""); }}>{t.register}</button>
-          </div>
-
-          <div className="auth-form">
-            {authMode === "register" && (
-              <label><span>{t.display}</span><input value={displayName} maxLength={80} onChange={(event) => setDisplayName(event.target.value)} placeholder={t.displayHint} autoComplete="name" /></label>
-            )}
-            <label><span>{t.username}</span><input value={username} maxLength={20} onChange={(event) => setUsername(event.target.value.replace(/\s/g, "").toLowerCase())} placeholder="username" autoComplete="username" spellCheck="false" /></label>
-            <label><span>{t.password}</span><input value={password} maxLength={128} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} onKeyDown={(event) => { if (event.key === "Enter") authMode === "login" ? login() : register(); }} /></label>
-
-            {authMode === "register" && (
-              <div className="contact-box">
-                <label className="check-line"><input type="checkbox" checked={shareContact} onChange={(event) => setShareContact(event.target.checked)} /><span>{t.contactQuestion} <small>({t.optional})</small></span></label>
-                {shareContact && (
-                  <div className="contact-fields">
-                    <select value={contactType} onChange={(event) => setContactType(event.target.value)} aria-label={t.contact}>
-                      <option value="telegram">{t.telegram}</option><option value="instagram">{t.instagram}</option><option value="email">{t.email}</option><option value="phone">{t.phone}</option><option value="other">{t.other}</option>
-                    </select>
-                    <input value={contactValue} maxLength={160} onChange={(event) => setContactValue(event.target.value)} placeholder={t.contactPlaceholder} />
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {error && <div className="notice error" role="alert">{error}</div>}
-          {success && <div className="notice success" role="status">{success}</div>}
-          <button type="button" className="primary-button" disabled={busy} onClick={authMode === "login" ? login : register}>{busy ? t.pleaseWait : authMode === "login" ? t.signIn : t.create}</button>
-          <button type="button" className="support-link" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button>
-        </section>
-        {panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}
-      </main>
-    );
-  }
-
-  return (
-    <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}>
-      <div className="app-frame">
-        <aside className={`sidebar ${selected ? "chat-selected" : ""}`}>
-          <div className="side-header">
-            <div className="brand-lockup"><div className="brand-mark small">M</div><div><div className="brand-name">{t.brand}</div><div className="side-me">@{profile?.username || "user"}</div></div></div>
-            <div className="top-actions">
-              <button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" />{Object.values(unread).reduce((sum, value) => sum + value, 0) > 0 && <span className="notification-dot" />}</button>
-              <button type="button" className="icon-button" onClick={() => setDark((value) => !value)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button>
-            </div>
-          </div>
-
-          <button type="button" className="profile-pill" onClick={() => setPanel("profile")}>
-            <div className="avatar">{firstLetter(profile?.display_name || profile?.username)}</div>
-            <div className="profile-text"><strong>{profile?.display_name || profile?.username}</strong><span>@{profile?.username}</span></div>
-            <span className="chevron">›</span>
-          </button>
-
-          <div className="search-wrap"><Icon name="search" /><input value={search} maxLength={50} onChange={(event) => setSearch(event.target.value)} placeholder={t.search} aria-label={t.search} /></div>
-          <div className="section-title"><span>{t.users}</span><span className="count-badge">{users.length}</span></div>
-          <div className="user-list">
-            {filteredUsers.map((user) => (
-              <button type="button" className={`user-row ${selected?.id === user.id ? "selected" : ""}`} key={user.id} onClick={() => openChat(user)}>
-                <div className="avatar">{firstLetter(user.display_name || user.username)}</div>
-                <div className="user-meta"><strong>{user.display_name || user.username}</strong><span>@{user.username}</span></div>
-                {!!unread[user.id] && <span className="unread-badge">{unread[user.id] > 99 ? "99+" : unread[user.id]}</span>}
-              </button>
-            ))}
-            {!filteredUsers.length && <div className="empty-list">{t.noUsers}</div>}
-          </div>
-
-          <div className="side-footer">
-            <button type="button" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button>
-            <button type="button" onClick={() => setPanel("profile")}><Icon name="user" />{t.profile}</button>
-            <button type="button" onClick={logout} disabled={busy}><span className="logout-dot" />{t.logout}</button>
-          </div>
-        </aside>
-
-        <section className="chat-panel">
-          {!selected ? (
-            <div className="empty-chat"><div className="empty-icon"><span>✦</span></div><h1>{t.startChat}</h1><p>{t.startChatHint}</p></div>
-          ) : (
-            <>
-              <header className="chat-header">
-                <div className="chat-person">
-                  <button type="button" className="back-button" onClick={() => setSelected(null)} aria-label={t.back}>‹</button>
-                  <div className="avatar large">{firstLetter(selected.display_name || selected.username)}</div>
-                  <div><h2>{selected.display_name || selected.username}</h2><span>@{selected.username}</span></div>
-                </div>
-                <div className="chat-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" /></button></div>
-              </header>
-
-              <div className="messages" aria-live="polite">
-                {!messages.length && <div className="empty-messages"><div className="empty-icon small">✦</div><strong>{t.noMessages}</strong><span>{t.firstMessage}</span></div>}
-                {messages.map((item) => {
-                  const mine = item.sender_id === session.user.id;
-                  return (
-                    <div key={item.id} className={`message-line ${mine ? "mine" : "theirs"}`}>
-                      <div className={`message-bubble ${mine ? "mine" : "theirs"}`}>
-                        {item.message_type === "file" ? (
-                          <button type="button" className="file-message" onClick={() => openFile(item)} title={t.openFile}><Icon name="paperclip" /><span>{item.file_name || t.file}</span></button>
-                        ) : <div className="message-content">{item.content}</div>}
-                        <time dateTime={item.created_at}>{formatTime(item.created_at, lang)}</time>
-                      </div>
-                    </div>
-                  );
-                })}
-                <div ref={endRef} />
-              </div>
-
-              <div className="composer">
-                <button type="button" className="icon-button attach" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={t.file}><Icon name="paperclip" /></button>
-                <input ref={fileRef} type="file" hidden onChange={sendFile} />
-                <textarea value={message} maxLength={MAX_MESSAGE_LENGTH} onChange={(event) => setMessage(event.target.value)} placeholder={t.write} rows={1} aria-label={t.write} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); sendMessage(); } }} />
-                <button type="button" className="send-button" onClick={sendMessage} disabled={busy || !message.trim()} aria-label={t.send}><Icon name="send" /></button>
-              </div>
-            </>
-          )}
-        </section>
+  if (!session) return <main className={`auth-page ${dark ? "theme-dark" : "theme-light"}`} dir={direction}>
+    <div className="auth-orbit" />
+    <section className="auth-card">
+      <header className="auth-top"><div className="brand-lockup"><div className="brand-mark">M</div><div><div className="brand-name">{t.brand}</div><div className="brand-tagline">{t.tagline}</div></div></div><div className="top-actions"><button type="button" className="ghost-button" onClick={() => setLang((v) => v === "fa" ? "en" : "fa")} aria-label="language">{lang === "fa" ? "EN" : "فا"}</button><button type="button" className="icon-button" onClick={() => setDark((v) => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></header>
+      <div className="auth-tabs" role="tablist"><button type="button" role="tab" aria-selected={authMode === "login"} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setError(""); }}>{t.login}</button><button type="button" role="tab" aria-selected={authMode === "register"} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setError(""); }}>{t.register}</button></div>
+      <div className="auth-form">
+        {authMode === "register" && <label><span>{t.display}</span><input value={displayName} maxLength={80} onChange={(e) => setDisplayName(e.target.value)} placeholder={t.displayHint} autoComplete="name" /></label>}
+        <label><span>{t.username}</span><input value={username} maxLength={20} onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())} placeholder="username" autoComplete="username" spellCheck="false" /></label>
+        <label><span>{t.password}</span><input value={password} maxLength={128} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} onKeyDown={(e) => { if (e.key === "Enter") authMode === "login" ? login() : register(); }} /></label>
+        {authMode === "register" && <div className="contact-box"><label className="check-line"><input type="checkbox" checked={shareContact} onChange={(e) => setShareContact(e.target.checked)} /><span>{t.contactQuestion} <small>({t.optional})</small></span></label>{shareContact && <div className="contact-fields"><select value={contactType} onChange={(e) => setContactType(e.target.value)} aria-label={t.contact}><option value="telegram">{t.telegram}</option><option value="instagram">{t.instagram}</option><option value="email">{t.email}</option><option value="phone">{t.phone}</option><option value="other">{t.other}</option></select><input value={contactValue} maxLength={160} onChange={(e) => setContactValue(e.target.value)} placeholder={t.contactPlaceholder} /></div>}</div>}
       </div>
+      {error && <div className="notice error" role="alert">{error}</div>}{success && <div className="notice success" role="status">{success}</div>}
+      <button type="button" className="primary-button" disabled={busy} onClick={authMode === "login" ? login : register}>{busy ? t.pleaseWait : authMode === "login" ? t.signIn : t.create}</button>
+      <button type="button" className="support-link" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button>
+    </section>
+    {panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}
+  </main>;
 
-      {error && <div className="toast error" role="alert"><span>{error}</span><div className="toast-actions"><button type="button" onClick={() => setPanel("support")}>{t.supportFromError}</button><button type="button" onClick={() => setError("")} aria-label={t.close}>×</button></div></div>}
-      {success && <div className="toast success" role="status"><span>{success}</span><button type="button" onClick={() => setSuccess("")} aria-label={t.close}>×</button></div>}
-
-      {panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}
-      {panel === "notifications" && (
-        <Modal title={t.notifications} onClose={() => setPanel(null)} closeLabel={t.close}>
-          <div className="notice-card"><Icon name="support" /><div><strong>{t.notificationSupport}</strong><p>{t.notificationSupportText}</p><button type="button" className="modal-button" onClick={() => setPanel("support")}>{t.support}</button></div></div>
-          <p className="muted">{t.noNotifications}</p>
-        </Modal>
-      )}
-      {panel === "profile" && (
-        <Modal title={t.profile} onClose={() => setPanel(null)} closeLabel={t.close}>
-          <div className="profile-modal">
-            <div className="avatar huge">{firstLetter(profile?.display_name || profile?.username)}</div>
-            <h3>{profile?.display_name || profile?.username}</h3>
-            <span>@{profile?.username}</span>
-            {profile?.contact_value && <div className="contact-chip">{profile.contact_type}: {profile.contact_value}</div>}
-          </div>
-        </Modal>
-      )}
-    </main>
-  );
+  return <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}>
+    <div className="app-frame">
+      <aside className={`sidebar ${selected ? "chat-selected" : ""}`}>
+        <div className="side-header"><div className="brand-lockup"><div className="brand-mark small">M</div><div><div className="brand-name">{t.brand}</div><div className="side-me">@{profile?.username || "user"}</div></div></div><div className="top-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" />{totalUnread > 0 && <span className="notification-dot" />}</button><button type="button" className="icon-button" onClick={() => setDark((v) => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></div>
+        <button type="button" className="profile-pill" onClick={() => setPanel("profile")}><div className="avatar">{firstLetter(profile?.display_name || profile?.username)}</div><div className="profile-text"><strong>{profile?.display_name || profile?.username}</strong><span>@{profile?.username}</span></div><span className="chevron">›</span></button>
+        <div className="search-wrap"><Icon name="search" /><input value={search} maxLength={50} onChange={(e) => setSearch(e.target.value)} placeholder={t.search} aria-label={t.search} /></div>
+        <div className="section-title"><span>{t.users}</span><span className="count-badge">{users.length}</span></div>
+        <div className="user-list">{filteredUsers.map((user) => <button type="button" className={`user-row ${selected?.id === user.id ? "selected" : ""}`} key={user.id} onClick={() => openChat(user)}><div className="avatar">{firstLetter(user.display_name || user.username)}</div><div className="user-meta"><strong>{user.display_name || user.username}</strong><span>@{user.username}</span></div>{!!unread[user.id] && <span className="unread-badge">{unread[user.id] > 99 ? "99+" : unread[user.id]}</span>}</button>)}{!filteredUsers.length && <div className="empty-list">{t.noUsers}</div>}</div>
+        <div className="side-footer"><button type="button" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button><button type="button" onClick={() => setPanel("profile")}><Icon name="user" />{t.profile}</button><button type="button" onClick={logout} disabled={busy}><span className="logout-dot" />{t.logout}</button></div>
+      </aside>
+      <section className="chat-panel">{!selected ? <div className="empty-chat"><div className="empty-icon"><span>✦</span></div><h1>{t.startChat}</h1><p>{t.startChatHint}</p></div> : <>
+        <header className="chat-header"><div className="chat-person"><button type="button" className="back-button" onClick={() => setSelected(null)} aria-label={t.back}>‹</button><div className="avatar large">{firstLetter(selected.display_name || selected.username)}</div><div><h2>{selected.display_name || selected.username}</h2><span>@{selected.username}</span></div></div><div className="chat-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" /></button></div></header>
+        <div className="messages" aria-live="polite">{!messages.length && <div className="empty-messages"><div className="empty-icon small">✦</div><strong>{t.noMessages}</strong><span>{t.firstMessage}</span></div>}{messages.map((item) => { const mine = item.sender_id === session.user.id; return <div key={item.id} className={`message-line ${mine ? "mine" : "theirs"}`}><div className={`message-bubble ${mine ? "mine" : "theirs"}`}>{item.message_type === "file" ? <button type="button" className="file-message" onClick={() => openFile(item)} title={t.openFile}><Icon name="paperclip" /><span>{item.file_name || t.file}</span></button> : <div className="message-content">{item.content}</div>}<time dateTime={item.created_at}>{formatTime(item.created_at, lang)}</time></div></div>; })}<div ref={endRef} /></div>
+        <div className="composer"><button type="button" className="icon-button attach" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={t.file}><Icon name="paperclip" /></button><input ref={fileRef} type="file" hidden onChange={sendFile} /><textarea value={message} maxLength={MAX_MESSAGE_LENGTH} onChange={(e) => setMessage(e.target.value)} placeholder={t.write} rows={1} aria-label={t.write} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} /><button type="button" className="send-button" onClick={sendMessage} disabled={busy || !message.trim()} aria-label={t.send}><Icon name="send" /></button></div>
+      </>}</section>
+    </div>
+    {error && <div className="toast error" role="alert"><span>{error}</span><div className="toast-actions"><button type="button" onClick={() => setPanel("support")}>{t.supportFromError}</button><button type="button" onClick={() => setError("")} aria-label={t.close}>×</button></div></div>}
+    {success && <div className="toast success" role="status"><span>{success}</span><button type="button" onClick={() => setSuccess("")} aria-label={t.close}>×</button></div>}
+    {panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}
+    {panel === "notifications" && <Modal title={t.notifications} onClose={() => setPanel(null)} closeLabel={t.close}><div className="notice-card"><Icon name="support" /><div><strong>{t.notificationSupport}</strong><p>{t.notificationSupportText}</p><button type="button" className="modal-button" onClick={() => setPanel("support")}>{t.support}</button></div></div><p className="muted">{totalUnread ? `${totalUnread} ${lang === "fa" ? "پیام خوانده‌نشده" : "unread messages"}` : t.noNotifications}</p></Modal>}
+    {panel === "profile" && <Modal title={t.profile} onClose={() => setPanel(null)} closeLabel={t.close}><div className="profile-modal"><div className="avatar huge">{firstLetter(profile?.display_name || profile?.username)}</div><h3>{profile?.display_name || profile?.username}</h3><span>@{profile?.username}</span>{profile?.contact_value && <div className="contact-chip">{profile.contact_type}: {profile.contact_value}</div>}</div></Modal>}
+  </main>;
 }
