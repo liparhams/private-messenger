@@ -27,11 +27,11 @@ Project Settings
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://YOUR-PROJECT-ID.supabase.co";
+  "https://jcblfgrcsgbdeamogzfc.supabase.co";
 
 const SUPABASE_PUBLISHABLE_KEY =
   process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  "YOUR_SUPABASE_PUBLISHABLE_KEY";
+  "sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
 
 const supabase = createClient(
   SUPABASE_URL,
