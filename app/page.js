@@ -13,10 +13,14 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  // ساخت کلاینت فقط وقتی envها موجود باشند (جلوگیری از ارور در build)
+  // ساخت کلاینت - مقادیر عمومی Supabase (anon/publishable) برای کار کردن روی Cloudflare
   const supabase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+    const url =
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      "https://jcblfgrcsgbdeamogzfc.supabase.co";
+    const key =
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
+      "sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
 
     if (!url || !key) {
       return null;
