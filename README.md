@@ -8,6 +8,7 @@ A lightweight messaging platform built with Next.js, React, Supabase and Cloudfl
 - React
 - Supabase Auth, Postgres, Realtime and private Storage
 - Cloudflare Workers + OpenNext
+- Node.js 22 for the Workers Builds environment
 
 ## Supabase setup
 
@@ -27,8 +28,10 @@ Connect the GitHub repository and use:
 - Build command: `npm run build`
 - Deploy command: `npx wrangler deploy`
 - Root directory: `/`
-- Non-production builds: optional
+- Non-production branch deploy command: leave the Cloudflare default
 - Build caching: enabled
+
+The repository includes `.nvmrc` with Node 22. Cloudflare Workers Builds currently defaults to Node 24, while version files can override the build image version. Pinning Node 22 keeps the build environment deterministic for this Next.js/OpenNext project.
 
 Do **not** add Supabase variables to Cloudflare for this version. The browser client uses the Supabase project URL and a Supabase **publishable** key. A publishable key is designed to be exposed to browser code; RLS is what protects the data.
 
@@ -61,3 +64,7 @@ Support display name: `Parham Soleimany`
 ## Deployment flow
 
 Workers Builds runs the build command first and then the deploy command. The repository's `build` script creates the OpenNext output; `npx wrangler deploy` publishes that already-built Worker. This avoids building the application a second time during the deploy step.
+
+## Important
+
+If a Cloudflare build stays in **Initializing**, **Cloning**, or **Installing dependencies** for an unusually long time, that is a Workers Builds/environment problem rather than a Supabase runtime secret problem. Check the build log for the exact phase before changing application code.
