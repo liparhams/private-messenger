@@ -1,4 +1,4 @@
-name: CI
+name: Build and Deploy
 
 on:
   push:
@@ -8,6 +8,10 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: messenger-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -21,6 +25,7 @@ jobs:
         uses: actions/setup-node@v5
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
@@ -38,3 +43,30 @@ jobs:
 
       - name: Validate Cloudflare deployment package
         run: npx wrangler deploy --dry-run
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Production build
+        run: npm run build
+
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
