@@ -3,6 +3,20 @@
 import { useState, useMemo, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
+const AUTH_EMAIL_DOMAIN = "messenger.local"; // ایمیل ساختگی داخلی برای Supabase Auth، فقط برای لاگین با username استفاده می‌شود
+
+function usernameToEmail(username) {
+  return `${username.toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
+}
+
+function mapAuthError(err) {
+  const m = (err?.message || "").toLowerCase();
+  if (m.includes("already registered") || m.includes("already exists")) return "این نام کاربری قبلاً ثبت شده.";
+  if (m.includes("password") && m.includes("6")) return "رمز عبور باید حداقل ۶ کاراکتر باشد.";
+  if (m.includes("invalid login credentials")) return "نام کاربری یا رمز عبور اشتباه است.";
+  return err?.message || "خطایی رخ داد.";
+}
+
 export default function Home() {
   const [mode, setMode] = useState("login");
   const [username, setUsername] = useState("");
@@ -11,8 +25,10 @@ export default function Home() {
   const [displayName, setDisplayName] = useState("");
   const [contactType, setContactType] = useState("telegram");
   const [contactValue, setContactValue] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [checkingSession, setCheckingSession] = useState(true);
 
   const [currentUser, setCurrentUser] = useState(null);
   const [users, setUsers] = useState([]);
@@ -22,12 +38,16 @@ export default function Home() {
   const [sending, setSending] = useState(false);
   const [darkMode, setDarkMode] = useState(true);
 
+  const [inviteLink, setInviteLink] = useState("");
+  const [creatingInvite, setCreatingInvite] = useState(false);
+  const [inviteCopied, setInviteCopied] = useState(false);
+
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
   const supabase = useMemo(() => {
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://jcblfgrcsgbdeamogzfc.supabase.co";
-    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
     if (!url || !key) return null;
     return createClient(url, key);
   }, []);
@@ -42,14 +62,43 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+  // خواندن کد دعوت از لینک (?invite=CODE) و بازیابی نشست قبلی
+  useEffect(() => {
+    if (!supabase) {
+      setCheckingSession(false);
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const inv = params.get("invite");
+    if (inv) {
+      setInviteCode(inv);
+      setMode("register");
+    }
+
+    async function restoreSession() {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", data.session.user.id)
+          .maybeSingle();
+        if (profile) setCurrentUser(profile);
+      }
+      setCheckingSession(false);
+    }
+    restoreSession();
+  }, [supabase]);
+
   // لود کاربران
   useEffect(() => {
     if (!currentUser || !supabase) return;
     async function loadUsers() {
       const { data } = await supabase
-        .from("users")
-        .select("username, display_name, contact_type, contact_value")
-        .neq("username", currentUser.username)
+        .from("profiles")
+        .select("id, username, display_name, contact_type, contact_value")
+        .neq("id", currentUser.id)
         .order("username");
       if (data) setUsers(data);
     }
@@ -64,23 +113,25 @@ export default function Home() {
     }
 
     async function loadMessages() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("messages")
         .select("*")
-        .or(`and(sender.eq.\( {currentUser.username},receiver.eq. \){selectedUser.username}),and(sender.eq.\( {selectedUser.username},receiver.eq. \){currentUser.username})`)
+        .or(
+          `and(sender_id.eq.${currentUser.id},receiver_id.eq.${selectedUser.id}),and(sender_id.eq.${selectedUser.id},receiver_id.eq.${currentUser.id})`
+        )
         .order("created_at", { ascending: true });
-      if (data) setMessages(data);
+      if (!error && data) setMessages(data);
     }
     loadMessages();
 
     const channel = supabase
-      .channel(`chat-\( {currentUser.username}- \){selectedUser.username}`)
+      .channel(`chat-${currentUser.id}-${selectedUser.id}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload) => {
         if (payload.eventType === "INSERT") {
           const msg = payload.new;
           const isRelevant =
-            (msg.sender === currentUser.username && msg.receiver === selectedUser.username) ||
-            (msg.sender === selectedUser.username && msg.receiver === currentUser.username);
+            (msg.sender_id === currentUser.id && msg.receiver_id === selectedUser.id) ||
+            (msg.sender_id === selectedUser.id && msg.receiver_id === currentUser.id);
           if (isRelevant) setMessages((prev) => [...prev, msg]);
         }
         if (payload.eventType === "UPDATE") {
@@ -92,7 +143,7 @@ export default function Home() {
     return () => supabase.removeChannel(channel);
   }, [currentUser, selectedUser, supabase]);
 
-  // ثبت‌نام
+  // ثبت‌نام (Supabase Auth واقعی + کد دعوت)
   async function register() {
     if (!username || !password || !displayName) {
       setMessage("نام کاربری، نام نمایشی و رمز عبور الزامی است.");
@@ -102,39 +153,54 @@ export default function Home() {
       setMessage("نام کاربری فقط حروف انگلیسی، عدد و _ (حداقل ۳ کاراکتر)");
       return;
     }
-    if (password.length < 4) {
-      setMessage("رمز عبور حداقل ۴ کاراکتر");
+    if (password.length < 6) {
+      setMessage("رمز عبور حداقل ۶ کاراکتر");
       return;
     }
-    if (!supabase) return;
+    if (!supabase) {
+      setMessage("اتصال به Supabase برقرار نیست. متغیرهای محیطی را بررسی کنید.");
+      return;
+    }
 
     setLoading(true);
     setMessage("");
     try {
-      const { data: existing } = await supabase.from("users").select("id").eq("username", username.toLowerCase()).maybeSingle();
-      if (existing) {
-        setMessage("این نام کاربری قبلاً ثبت شده.");
-        return;
+      let session = (await supabase.auth.getSession()).data.session;
+
+      if (!session) {
+        const { data, error } = await supabase.auth.signUp({
+          email: usernameToEmail(username),
+          password
+        });
+        if (error) {
+          setMessage(mapAuthError(error));
+          return;
+        }
+        session = data.session;
+        if (!session) {
+          setMessage(
+            "حساب ساخته شد ولی نشست فعال نیست. در تنظیمات Supabase گزینه «Confirm email» را غیرفعال کنید."
+          );
+          return;
+        }
       }
 
-      const { error } = await supabase.from("users").insert({
-        username: username.toLowerCase(),
-        password,
-        display_name: displayName,
-        contact_type: contactType,
-        contact_value: contactValue || null
+      const { data: profile, error: rpcError } = await supabase.rpc("redeem_invite", {
+        invite_code: inviteCode ? inviteCode.trim() : null,
+        p_username: username.toLowerCase(),
+        p_display_name: displayName,
+        p_contact_type: contactType,
+        p_contact_value: contactValue || null
       });
 
-      if (error) {
-        setMessage("خطا: " + error.message);
+      if (rpcError) {
+        // کاربر لاگین شده ولی پروفایل ساخته نشد؛ می‌تواند دوباره با کد دعوت درست تلاش کند
+        setMessage(rpcError.message);
         return;
       }
-      setMessage("ثبت‌نام موفق! حالا وارد شوید.");
-      setMode("login");
-      setUsername("");
-      setPassword("");
-      setDisplayName("");
-      setContactValue("");
+
+      setMessage("");
+      setCurrentUser(profile);
     } catch {
       setMessage("خطایی رخ داد.");
     } finally {
@@ -144,28 +210,42 @@ export default function Home() {
 
   // ورود
   async function login() {
-    const loginName = userId || username;
+    const loginName = (userId || username).trim();
     if (!loginName || !password) {
       setMessage("نام کاربری و رمز عبور را وارد کنید.");
       return;
     }
-    if (!supabase) return;
+    if (!supabase) {
+      setMessage("اتصال به Supabase برقرار نیست. متغیرهای محیطی را بررسی کنید.");
+      return;
+    }
 
     setLoading(true);
     setMessage("");
     try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("username", loginName.toLowerCase())
-        .eq("password", password)
-        .maybeSingle();
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: usernameToEmail(loginName),
+        password
+      });
 
-      if (error || !data) {
+      if (error || !data.session) {
         setMessage("نام کاربری یا رمز عبور اشتباه است.");
         return;
       }
-      setCurrentUser(data);
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", data.session.user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        setMessage("ثبت‌نام شما کامل نشده. لطفاً کد دعوت را وارد و ثبت‌نام را کامل کنید.");
+        setMode("register");
+        return;
+      }
+
+      setCurrentUser(profile);
       setMessage("");
       setPassword("");
       setUserId("");
@@ -179,13 +259,18 @@ export default function Home() {
   // ارسال پیام متنی
   async function sendMessage() {
     if (!newMessage.trim() || !currentUser || !selectedUser || !supabase) return;
+    const content = newMessage.trim();
     setSending(true);
     try {
-      await supabase.from("messages").insert({
-        sender: currentUser.username,
-        receiver: selectedUser.username,
-        content: newMessage.trim()
+      const { error } = await supabase.from("messages").insert({
+        sender_id: currentUser.id,
+        receiver_id: selectedUser.id,
+        content
       });
+      if (error) {
+        alert("خطا در ارسال: " + error.message);
+        return;
+      }
       setNewMessage("");
     } catch {
       alert("خطا در ارسال");
@@ -202,20 +287,21 @@ export default function Home() {
     setSending(true);
     try {
       const ext = file.name.split(".").pop();
-      const fileName = `\( {Date.now()}- \){Math.random().toString(36).slice(2)}.${ext}`;
+      const fileName = `${currentUser.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
       const { error: uploadError } = await supabase.storage.from("chat-files").upload(fileName, file);
       if (uploadError) throw uploadError;
 
       const { data: urlData } = supabase.storage.from("chat-files").getPublicUrl(fileName);
       const fileType = file.type.startsWith("image/") ? "image" : file.type.startsWith("video/") ? "video" : "file";
 
-      await supabase.from("messages").insert({
-        sender: currentUser.username,
-        receiver: selectedUser.username,
+      const { error: insertError } = await supabase.from("messages").insert({
+        sender_id: currentUser.id,
+        receiver_id: selectedUser.id,
         content: file.name,
         file_url: urlData.publicUrl,
         file_type: fileType
       });
+      if (insertError) throw insertError;
     } catch (err) {
       alert("خطا در آپلود فایل: " + (err.message || "مشکل ناشناخته"));
     } finally {
@@ -242,11 +328,45 @@ export default function Home() {
     await supabase.from("messages").update({ reactions }).eq("id", msgId);
   }
 
-  function logout() {
+  // ساخت لینک دعوت برای کاربر جدید
+  async function createInvite() {
+    if (!supabase || !currentUser) return;
+    setCreatingInvite(true);
+    setInviteCopied(false);
+    try {
+      const { data, error } = await supabase
+        .from("invites")
+        .insert({ created_by: currentUser.id })
+        .select()
+        .single();
+      if (error) {
+        alert("خطا در ساخت دعوت: " + error.message);
+        return;
+      }
+      const link = `${window.location.origin}${window.location.pathname}?invite=${data.code}`;
+      setInviteLink(link);
+    } finally {
+      setCreatingInvite(false);
+    }
+  }
+
+  async function copyInviteLink() {
+    try {
+      await navigator.clipboard.writeText(inviteLink);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2000);
+    } catch {
+      // مرورگر از کپی خودکار پشتیبانی نکرد؛ کاربر می‌تواند دستی کپی کند
+    }
+  }
+
+  async function logout() {
+    if (supabase) await supabase.auth.signOut();
     setCurrentUser(null);
     setSelectedUser(null);
     setMessages([]);
     setUsers([]);
+    setInviteLink("");
     setMode("login");
   }
 
@@ -257,12 +377,28 @@ export default function Home() {
   const border = darkMode ? "#334155" : "#e2e8f0";
   const primary = "#3b82f6";
 
+  if (checkingSession) {
+    return (
+      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: bg, color: text }}>
+        در حال بررسی نشست...
+      </main>
+    );
+  }
+
+  if (!supabase) {
+    return (
+      <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: bg, color: text, padding: 24, textAlign: "center" }}>
+        متغیرهای محیطی NEXT_PUBLIC_SUPABASE_URL و NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY تنظیم نشده‌اند.
+      </main>
+    );
+  }
+
   // ====================== صفحه چت ======================
   if (currentUser) {
     return (
       <div style={{ height: "100vh", background: bg, color: text, fontFamily: "system-ui, sans-serif" }}>
         <div style={{ display: "flex", height: "100%", maxWidth: "1000px", margin: "0 auto", boxShadow: "0 0 40px rgba(0,0,0,0.3)" }}>
-          
+
           {/* سایدبار */}
           <div style={{ width: "300px", borderLeft: `1px solid ${border}`, background: cardBg, display: "flex", flexDirection: "column" }}>
             <div style={{ padding: "16px", background: darkMode ? "#020617" : "#0f172a", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -280,19 +416,41 @@ export default function Home() {
               </div>
             </div>
 
-            <div style={{ padding: "12px 16px", fontSize: 13, color: muted, fontWeight: 600 }}>کاربران</div>
+            <div style={{ padding: "12px 16px" }}>
+              <button
+                onClick={createInvite}
+                disabled={creatingInvite}
+                style={{ width: "100%", padding: "10px", borderRadius: 10, border: `1px solid ${border}`, background: "transparent", color: primary, cursor: "pointer", fontWeight: 600, fontSize: 13 }}
+              >
+                {creatingInvite ? "در حال ساخت لینک..." : "✉️ دعوت کاربر جدید"}
+              </button>
+              {inviteLink && (
+                <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: darkMode ? "#0f2942" : "#e0f2fe", fontSize: 12 }}>
+                  <div style={{ wordBreak: "break-all", color: text, marginBottom: 6 }}>{inviteLink}</div>
+                  <button
+                    onClick={copyInviteLink}
+                    style={{ background: primary, color: "white", border: "none", padding: "6px 12px", borderRadius: 8, cursor: "pointer", fontSize: 12 }}
+                  >
+                    {inviteCopied ? "کپی شد ✓" : "کپی لینک"}
+                  </button>
+                  <div style={{ marginTop: 6, color: muted }}>این لینک تا ۷ روز معتبر است و فقط یک‌بار قابل استفاده.</div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ padding: "0 16px 12px", fontSize: 13, color: muted, fontWeight: 600 }}>کاربران</div>
             <div style={{ flex: 1, overflowY: "auto" }}>
               {users.length === 0 ? (
                 <div style={{ padding: 20, textAlign: "center", color: muted }}>هنوز کاربری نیست</div>
               ) : (
                 users.map((u) => (
                   <div
-                    key={u.username}
+                    key={u.id}
                     onClick={() => setSelectedUser(u)}
                     style={{
                       padding: "14px 16px",
                       cursor: "pointer",
-                      background: selectedUser?.username === u.username ? (darkMode ? "#1e3a5f" : "#e0f2fe") : "transparent",
+                      background: selectedUser?.id === u.id ? (darkMode ? "#1e3a5f" : "#e0f2fe") : "transparent",
                       borderBottom: `1px solid ${border}`,
                       transition: "0.15s"
                     }}
@@ -335,7 +493,7 @@ export default function Home() {
                   )}
 
                   {messages.map((msg) => {
-                    const isMe = msg.sender === currentUser.username;
+                    const isMe = msg.sender_id === currentUser.id;
                     const reactions = msg.reactions || {};
                     return (
                       <div key={msg.id} style={{ alignSelf: isMe ? "flex-end" : "flex-start", maxWidth: "75%" }}>
@@ -364,7 +522,7 @@ export default function Home() {
 
                           {/* واکنش‌ها */}
                           <div style={{ display: "flex", gap: 4, marginTop: 6, flexWrap: "wrap" }}>
-                            {Object.entries(reactions).map(([emoji, users]) => (
+                            {Object.entries(reactions).map(([emoji, reactedUsers]) => (
                               <button
                                 key={emoji}
                                 onClick={() => addReaction(msg.id, emoji)}
@@ -378,7 +536,7 @@ export default function Home() {
                                   color: text
                                 }}
                               >
-                                {emoji} {users.length}
+                                {emoji} {reactedUsers.length}
                               </button>
                             ))}
                           </div>
@@ -506,6 +664,10 @@ export default function Home() {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
             <div>
+              <label style={{ fontSize: 13, color: muted }}>کد دعوت (اگر اولین کاربر هستید خالی بگذارید)</label>
+              <input value={inviteCode} onChange={(e) => setInviteCode(e.target.value)} placeholder="کد دعوت" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${border}`, background: bg, color: text, marginTop: 4, outline: "none" }} />
+            </div>
+            <div>
               <label style={{ fontSize: 13, color: muted }}>نام کاربری (انگلیسی)</label>
               <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="مثلاً parham" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${border}`, background: bg, color: text, marginTop: 4, outline: "none" }} />
             </div>
@@ -527,7 +689,7 @@ export default function Home() {
             </div>
             <div>
               <label style={{ fontSize: 13, color: muted }}>رمز عبور</label>
-              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="حداقل ۴ کاراکتر" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${border}`, background: bg, color: text, marginTop: 4, outline: "none" }} />
+              <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="حداقل ۶ کاراکتر" style={{ width: "100%", padding: "12px 14px", borderRadius: 10, border: `1px solid ${border}`, background: bg, color: text, marginTop: 4, outline: "none" }} />
             </div>
             <button onClick={register} disabled={loading} style={{ marginTop: 8, padding: 14, borderRadius: 12, border: "none", background: primary, color: "white", fontWeight: 600, cursor: "pointer", opacity: loading ? 0.7 : 1 }}>
               {loading ? "در حال ثبت‌نام..." : "ساخت حساب"}
@@ -556,4 +718,5 @@ export default function Home() {
       </div>
     </main>
   );
-              }
+}
+
