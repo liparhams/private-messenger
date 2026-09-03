@@ -5,88 +5,27 @@ import { createClient } from "@supabase/supabase-js";
 
 const SUPABASE_URL = "https://jcblfgrcsgbdeamogzfc.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
-const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-});
-
-const SUPPORT = {
-  username: "parham",
-  displayName: "Parham Soleimany",
-  telegram: "https://t.me/parhamsoleimanybot",
-  utino: "https://utino.org/chat/supportusername",
-  wdner: "https://wdner.co",
-  iparham: "https://iparham.com"
-};
+const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+const AUTH_DOMAIN = "utino.chat";
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const MAX_FILENAME_LENGTH = 180;
 const FILE_BUCKET = "chat-files";
-const AUTH_DOMAIN = "utino.chat";
+
+const SUPPORT = { username: "SUPPORT", displayName: "پشتیبانی رسمی", telegram: "https://t.me/parhamsoleimanybot", utino: "https://utino.org/chat/supportusername", wdner: "https://wdner.co", iparham: "https://iparham.com" };
 
 const TEXT = {
   fa: {
-    brand: "Messenger", tagline: "پیام‌رسان", login: "ورود", register: "ثبت‌نام", username: "نام کاربری",
-    usernameHint: "۳ تا ۲۰ کاراکتر، فقط حروف انگلیسی، عدد و _", display: "نام نمایشی", displayHint: "نامی که دیگران می‌بینند",
-    password: "رمز عبور", signIn: "ورود به حساب", create: "ساخت حساب", pleaseWait: "لطفاً صبر کن...",
-    contactQuestion: "راه ارتباطی من برای دیگران نمایش داده شود", optional: "اختیاری", telegram: "تلگرام", instagram: "اینستاگرام",
-    email: "ایمیل", phone: "تلفن", other: "سایر", contactPlaceholder: "مثلاً @username یا شماره", search: "جستجوی کاربران",
-    users: "کاربران", noUsers: "کاربری پیدا نشد", startChat: "یک گفت‌وگو را شروع کن", startChatHint: "یک نفر را از فهرست انتخاب کن.",
-    noMessages: "هنوز پیامی نیست", firstMessage: "اولین پیام را بفرست.", write: "پیامت را بنویس...", send: "ارسال", support: "پشتیبانی",
-    notifications: "اعلان‌ها", profile: "پروفایل", logout: "خروج", supportTitle: "پشتیبانی",
-    supportText: "برای دریافت کمک از یکی از مسیرهای زیر با پشتیبانی در ارتباط باش.", supportAccount: "پشتیبانی رسمی",
-    supportTelegram: "پشتیبانی در تلگرام", supportWeb: "پشتیبانی در یوتینو", supportUsername: "@parham", noNotifications: "اعلان جدیدی نداری.",
-    back: "بازگشت", loading: "در حال بارگذاری...", close: "بستن", invalidUser: "نام کاربری نامعتبر است.",
-    shortPassword: "رمز عبور باید حداقل ۶ کاراکتر باشد.", registerRequired: "نام نمایشی، نام کاربری و رمز عبور را کامل کن.",
-    displayTooLong: "نام نمایشی بیش از حد طولانی است.", contactRequired: "برای نمایش راه ارتباطی، اطلاعات تماس را وارد کن.",
-    invalidContactType: "نوع راه ارتباطی نامعتبر است.", invalidLogin: "نام کاربری یا رمز عبور اشتباه است.", already: "این نام کاربری قبلاً ثبت شده است.",
-    genericError: "خطایی رخ داد. دوباره تلاش کن.", messageTooLong: "پیام نمی‌تواند بیشتر از ۴۰۰۰ کاراکتر باشد.", messageFailed: "ارسال پیام انجام نشد.",
-    uploadFailed: "ارسال فایل انجام نشد.", fileTooLarge: "حجم فایل بیشتر از ۱۵ مگابایت است.", fileNameTooLong: "نام فایل بیش از حد طولانی است.",
-    file: "فایل", openFile: "باز کردن فایل", signedIn: "ورود موفق بود.", accountCreated: "حساب ساخته شد. حالا وارد شو.",
-    contact: "راه ارتباطی", supportFromError: "ارتباط با پشتیبانی", notificationSupport: "پشتیبانی در دسترس است.",
-    notificationSupportText: "برای گزارش مشکل یا دریافت کمک، پشتیبانی رسمی را باز کن.", signedOut: "از حساب خارج شدی.",
-    rateLimit: "تعداد تلاش‌ها زیاد است. چند دقیقه صبر کن و دوباره امتحان کن."
+    brand: "Messenger", tagline: "پیام‌رسان", login: "ورود", username: "نام کاربری", password: "رمز عبور", signIn: "ورود به حساب", pleaseWait: "لطفاً صبر کن...", search: "جستجوی کاربران", users: "کاربران", noUsers: "کاربری پیدا نشد", startChat: "یک گفت‌وگو را شروع کن", startChatHint: "یک نفر را از فهرست انتخاب کن.", noMessages: "هنوز پیامی نیست", firstMessage: "اولین پیام را بفرست.", write: "پیامت را بنویس...", send: "ارسال", support: "پشتیبانی", notifications: "اعلان‌ها", profile: "پروفایل", logout: "خروج", supportTitle: "پشتیبانی", supportText: "ثبت‌نام آزاد نیست. برای ساخت حساب با پشتیبانی در ارتباط باش.", supportTelegram: "پشتیبانی در تلگرام", supportWeb: "پشتیبانی در یوتینو", supportUsername: "@SUPPORT", noNotifications: "اعلان جدیدی نداری.", back: "بازگشت", loading: "در حال بارگذاری...", close: "بستن", invalidUser: "نام کاربری نامعتبر است.", shortPassword: "رمز عبور باید حداقل ۶ کاراکتر باشد.", invalidLogin: "نام کاربری یا رمز عبور اشتباه است.", genericError: "خطایی رخ داد. دوباره تلاش کن.", messageTooLong: "پیام نمی‌تواند بیشتر از ۴۰۰۰ کاراکتر باشد.", messageFailed: "ارسال پیام انجام نشد.", uploadFailed: "ارسال فایل انجام نشد.", fileTooLarge: "حجم فایل بیشتر از ۱۵ مگابایت است.", fileNameTooLong: "نام فایل بیش از حد طولانی است.", file: "فایل", openFile: "باز کردن فایل", signedIn: "ورود موفق بود.", contact: "راه ارتباطی", supportFromError: "ارتباط با پشتیبانی", notificationSupport: "پشتیبانی در دسترس است.", notificationSupportText: "برای ساخت حساب یا گزارش مشکل، پشتیبانی رسمی را باز کن.", signedOut: "از حساب خارج شدی."
   },
   en: {
-    brand: "Messenger", tagline: "Messaging platform", login: "Sign in", register: "Create account", username: "Username",
-    usernameHint: "3–20 characters, English letters, numbers and _ only", display: "Display name", displayHint: "The name others see",
-    password: "Password", signIn: "Sign in", create: "Create account", pleaseWait: "Please wait...",
-    contactQuestion: "Show my contact method to other users", optional: "Optional", telegram: "Telegram", instagram: "Instagram",
-    email: "Email", phone: "Phone", other: "Other", contactPlaceholder: "e.g. @username or phone", search: "Search users",
-    users: "Users", noUsers: "No users found", startChat: "Start a conversation", startChatHint: "Choose someone from the list.",
-    noMessages: "No messages yet", firstMessage: "Send the first message.", write: "Write a message...", send: "Send", support: "Support",
-    notifications: "Notifications", profile: "Profile", logout: "Sign out", supportTitle: "Support",
-    supportText: "Use one of the options below to contact official support.", supportAccount: "Official support",
-    supportTelegram: "Support on Telegram", supportWeb: "Support on Utino", supportUsername: "@parham", noNotifications: "You have no new notifications.",
-    back: "Back", loading: "Loading...", close: "Close", invalidUser: "Invalid username.", shortPassword: "Password must be at least 6 characters.",
-    registerRequired: "Complete your display name, username and password.", displayTooLong: "Display name is too long.",
-    contactRequired: "Enter contact details to display a contact method.", invalidContactType: "Invalid contact type.",
-    invalidLogin: "Incorrect username or password.", already: "This username is already registered.", genericError: "Something went wrong. Please try again.",
-    messageTooLong: "Messages cannot exceed 4000 characters.", messageFailed: "Message could not be sent.", uploadFailed: "File could not be sent.",
-    fileTooLarge: "File size is over 15 MB.", fileNameTooLong: "File name is too long.", file: "File", openFile: "Open file",
-    signedIn: "Signed in successfully.", accountCreated: "Account created. You can sign in now.", contact: "Contact", supportFromError: "Contact support",
-    notificationSupport: "Support is available.", notificationSupportText: "Open official support to report a problem or get help.", signedOut: "You have signed out.",
-    rateLimit: "Too many attempts. Wait a few minutes and try again."
+    brand: "Messenger", tagline: "Messaging platform", login: "Sign in", username: "Username", password: "Password", signIn: "Sign in", pleaseWait: "Please wait...", search: "Search users", users: "Users", noUsers: "No users found", startChat: "Start a conversation", startChatHint: "Choose someone from the list.", noMessages: "No messages yet", firstMessage: "Send the first message.", write: "Write a message...", send: "Send", support: "Support", notifications: "Notifications", profile: "Profile", logout: "Sign out", supportTitle: "Support", supportText: "Registration is not public. Contact support to create an account.", supportTelegram: "Support on Telegram", supportWeb: "Support on Utino", supportUsername: "@SUPPORT", noNotifications: "You have no new notifications.", back: "Back", loading: "Loading...", close: "Close", invalidUser: "Invalid username.", shortPassword: "Password must be at least 6 characters.", invalidLogin: "Incorrect username or password.", genericError: "Something went wrong. Please try again.", messageTooLong: "Messages cannot exceed 4000 characters.", messageFailed: "Message could not be sent.", uploadFailed: "File could not be sent.", fileTooLarge: "File size is over 15 MB.", fileNameTooLong: "File name is too long.", file: "File", openFile: "Open file", signedIn: "Signed in successfully.", contact: "Contact", supportFromError: "Contact support", notificationSupport: "Support is available.", notificationSupportText: "Open official support to create an account or report a problem.", signedOut: "You have signed out."
   }
 };
 
-const CONTACT_TYPES = new Set(["telegram", "instagram", "email", "phone", "other"]);
 function usernameEmail(value) { return `${value.trim().toLowerCase()}@${AUTH_DOMAIN}`; }
-function formatTime(value, lang) {
-  if (!value) return "";
-  try { return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-US", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)); }
-  catch { return ""; }
-}
-function authError(error, t) {
-  const message = String(error?.message || "").toLowerCase();
-  if (message.includes("rate limit") || message.includes("too many requests")) return t.rateLimit;
-  if (message.includes("invalid login credentials")) return t.invalidLogin;
-  if (message.includes("already registered") || message.includes("already exists") || message.includes("duplicate")) return t.already;
-  if (message.includes("password")) return t.shortPassword;
-  if (message.includes("username")) return t.already;
-  if (message.includes("invalid email")) return langSafeInvalidEmail(t);
-  return t.genericError;
-}
-function langSafeInvalidEmail(t) { return t === TEXT.fa ? "خطای تنظیمات ورود: فرمت ایمیل داخلی نامعتبر است." : "Login configuration error: internal email format is invalid."; }
+function formatTime(value, lang) { try { return new Intl.DateTimeFormat(lang === "fa" ? "fa-IR" : "en-US", { hour: "2-digit", minute: "2-digit" }).format(new Date(value)); } catch { return ""; } }
+function authError(error, t) { const message = String(error?.message || "").toLowerCase(); if (message.includes("invalid login credentials")) return t.invalidLogin; if (message.includes("password")) return t.shortPassword; return t.genericError; }
 function firstLetter(value) { return (value || "M").trim().slice(0, 1).toUpperCase(); }
 
 function Icon({ name }) {
@@ -106,140 +45,33 @@ function Icon({ name }) {
 }
 
 function Modal({ title, onClose, children, closeLabel }) {
-  useEffect(() => {
-    const onKey = (event) => { if (event.key === "Escape") onClose(); };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-  return <div className="modal-backdrop" onMouseDown={onClose} role="presentation"><div className="modal" onMouseDown={(event) => event.stopPropagation()} role="dialog" aria-modal="true" aria-label={title}><div className="modal-head"><h2>{title}</h2><button type="button" className="icon-button" onClick={onClose} aria-label={closeLabel}>×</button></div><div className="modal-body">{children}</div></div></div>;
+  useEffect(() => { const onKey = e => { if (e.key === "Escape") onClose(); }; window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey); }, [onClose]);
+  return <div className="modal-backdrop" onMouseDown={onClose} role="presentation"><div className="modal" onMouseDown={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-label={title}><div className="modal-head"><h2>{title}</h2><button type="button" className="icon-button" onClick={onClose} aria-label={closeLabel}>×</button></div><div className="modal-body">{children}</div></div></div>;
 }
 
 function SupportPanel({ t, onClose }) {
-  return <Modal title={t.supportTitle} onClose={onClose} closeLabel={t.close}>
-    <div className="support-account"><div className="avatar huge">P</div><div><strong>{SUPPORT.displayName}</strong><span>{t.supportUsername}</span></div></div>
-    <p>{t.supportText}</p>
-    <a className="modal-link" href={SUPPORT.telegram} target="_blank" rel="noopener noreferrer"><span>{t.supportTelegram}</span><Icon name="external" /></a>
-    <a className="modal-link" href={SUPPORT.utino} target="_blank" rel="noopener noreferrer"><span>{t.supportWeb}</span><Icon name="external" /></a>
-    <div className="support-sites"><a href={SUPPORT.iparham} target="_blank" rel="noopener noreferrer">iParham</a><a href={SUPPORT.wdner} target="_blank" rel="noopener noreferrer">WDNER</a><a href="https://utino.org" target="_blank" rel="noopener noreferrer">Utino</a></div>
-  </Modal>;
+  return <Modal title={t.supportTitle} onClose={onClose} closeLabel={t.close}><div className="support-account"><div className="avatar huge">S</div><div><strong>{SUPPORT.displayName}</strong><span>{t.supportUsername} <span className="verified-badge">✓</span></span></div></div><p>{t.supportText}</p><a className="modal-link" href={SUPPORT.telegram} target="_blank" rel="noopener noreferrer"><span>{t.supportTelegram}</span><Icon name="external" /></a><a className="modal-link" href={SUPPORT.utino} target="_blank" rel="noopener noreferrer"><span>{t.supportWeb}</span><Icon name="external" /></a><div className="support-sites"><a href={SUPPORT.iparham} target="_blank" rel="noopener noreferrer">iParham</a><a href={SUPPORT.wdner} target="_blank" rel="noopener noreferrer">WDNER</a><a href="https://utino.org" target="_blank" rel="noopener noreferrer">Utino</a></div></Modal>;
 }
 
 export default function Home() {
-  const [lang, setLang] = useState("fa"), [dark, setDark] = useState(true), [authMode, setAuthMode] = useState("login"), [session, setSession] = useState(null), [profile, setProfile] = useState(null), [users, setUsers] = useState([]), [selected, setSelected] = useState(null), [messages, setMessages] = useState([]), [unread, setUnread] = useState({}), [search, setSearch] = useState(""), [message, setMessage] = useState(""), [username, setUsername] = useState(""), [displayName, setDisplayName] = useState(""), [password, setPassword] = useState(""), [shareContact, setShareContact] = useState(false), [contactType, setContactType] = useState("telegram"), [contactValue, setContactValue] = useState(""), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [error, setError] = useState(""), [success, setSuccess] = useState(""), [panel, setPanel] = useState(null);
+  const [lang, setLang] = useState("fa"), [dark, setDark] = useState(true), [session, setSession] = useState(null), [profile, setProfile] = useState(null), [users, setUsers] = useState([]), [selected, setSelected] = useState(null), [messages, setMessages] = useState([]), [unread, setUnread] = useState({}), [search, setSearch] = useState(""), [message, setMessage] = useState(""), [username, setUsername] = useState(""), [password, setPassword] = useState(""), [busy, setBusy] = useState(false), [loading, setLoading] = useState(true), [error, setError] = useState(""), [success, setSuccess] = useState(""), [panel, setPanel] = useState(null);
   const fileRef = useRef(null), endRef = useRef(null), t = TEXT[lang];
-
   useEffect(() => { try { const l = localStorage.getItem("messenger-language"), th = localStorage.getItem("messenger-theme"); if (l === "fa" || l === "en") setLang(l); if (th === "light" || th === "dark") setDark(th === "dark"); } catch {} }, []);
   useEffect(() => { try { localStorage.setItem("messenger-language", lang); localStorage.setItem("messenger-theme", dark ? "dark" : "light"); } catch {} }, [lang, dark]);
   function reportError(e, fallback) { console.error(e); setError(fallback || t.genericError); }
-
-  async function refreshUser(userId) {
-    const [p, u] = await Promise.all([
-      supabase.from("profiles").select("id, username, display_name, contact_type, contact_value, created_at").eq("id", userId).maybeSingle(),
-      supabase.from("profiles").select("id, username, display_name, contact_type, contact_value, created_at").neq("id", userId).order("username", { ascending: true }).limit(500)
-    ]);
-    if (p.error) throw p.error; if (u.error) throw u.error;
-    setProfile(p.data || null); setUsers(u.data || []);
-  }
-
-  useEffect(() => {
-    let active = true;
-    async function boot() {
-      try { const { data, error: sessionError } = await supabase.auth.getSession(); if (sessionError) throw sessionError; const s = data?.session || null; if (!active) return; setSession(s); if (s?.user) await refreshUser(s.user.id); }
-      catch (e) { if (active) reportError(e, t.genericError); }
-      finally { if (active) setLoading(false); }
-    }
-    boot();
-    const { data } = supabase.auth.onAuthStateChange((_event, s) => {
-      if (!active) return; setSession(s || null);
-      if (!s?.user) { setProfile(null); setUsers([]); setSelected(null); setMessages([]); setUnread({}); return; }
-      window.setTimeout(() => { if (active) refreshUser(s.user.id).catch((e) => reportError(e, t.genericError)); }, 0);
-    });
-    return () => { active = false; data?.subscription?.unsubscribe(); };
-  }, []);
-
-  useEffect(() => {
-    if (!session?.user?.id) return;
-    const ch = supabase.channel(`messages-${session.user.id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
-      const incoming = payload.new; if (!incoming?.id) return;
-      const mine = incoming.sender_id === session.user.id, forMe = incoming.receiver_id === session.user.id; if (!mine && !forMe) return;
-      setSelected((cur) => {
-        if (!cur) { if (forMe) setUnread((x) => ({ ...x, [incoming.sender_id]: (x[incoming.sender_id] || 0) + 1 })); return cur; }
-        const belongs = (incoming.sender_id === session.user.id && incoming.receiver_id === cur.id) || (incoming.sender_id === cur.id && incoming.receiver_id === session.user.id);
-        if (belongs) { setMessages((x) => x.some((i) => i.id === incoming.id) ? x : [...x, incoming]); if (incoming.sender_id === cur.id) setUnread((x) => ({ ...x, [cur.id]: 0 })); }
-        else if (forMe) setUnread((x) => ({ ...x, [incoming.sender_id]: (x[incoming.sender_id] || 0) + 1 }));
-        return cur;
-      });
-    }).subscribe();
-    return () => { supabase.removeChannel(ch); };
-  }, [session?.user?.id]);
-
+  async function refreshUser(userId) { const [p, u] = await Promise.all([supabase.from("profiles").select("id,username,display_name,contact_type,contact_value,created_at,role,is_verified").eq("id", userId).maybeSingle(), supabase.from("profiles").select("id,username,display_name,contact_type,contact_value,created_at,role,is_verified").neq("id", userId).order("username", { ascending: true }).limit(500)]); if (p.error) throw p.error; if (u.error) throw u.error; setProfile(p.data || null); setUsers(u.data || []); }
+  useEffect(() => { let active = true; async function boot() { try { const { data, error: sessionError } = await supabase.auth.getSession(); if (sessionError) throw sessionError; const s = data?.session || null; if (!active) return; setSession(s); if (s?.user) await refreshUser(s.user.id); } catch (e) { if (active) reportError(e, t.genericError); } finally { if (active) setLoading(false); } } boot(); const { data } = supabase.auth.onAuthStateChange((_event, s) => { if (!active) return; setSession(s || null); if (!s?.user) { setProfile(null); setUsers([]); setSelected(null); setMessages([]); setUnread({}); return; } window.setTimeout(() => { if (active) refreshUser(s.user.id).catch(e => reportError(e, t.genericError)); }, 0); }); return () => { active = false; data?.subscription?.unsubscribe(); }; }, []);
+  useEffect(() => { if (!session?.user?.id) return; const ch = supabase.channel(`messages-${session.user.id}`).on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, payload => { const incoming = payload.new; if (!incoming?.id) return; const mine = incoming.sender_id === session.user.id, forMe = incoming.receiver_id === session.user.id; if (!mine && !forMe) return; setSelected(cur => { if (!cur) { if (forMe) setUnread(x => ({ ...x, [incoming.sender_id]: (x[incoming.sender_id] || 0) + 1 })); return cur; } const belongs = (incoming.sender_id === session.user.id && incoming.receiver_id === cur.id) || (incoming.sender_id === cur.id && incoming.receiver_id === session.user.id); if (belongs) { setMessages(x => x.some(i => i.id === incoming.id) ? x : [...x, incoming]); if (incoming.sender_id === cur.id) setUnread(x => ({ ...x, [cur.id]: 0 })); } else if (forMe) setUnread(x => ({ ...x, [incoming.sender_id]: (x[incoming.sender_id] || 0) + 1 })); return cur; }); }).subscribe(); return () => { supabase.removeChannel(ch); }; }, [session?.user?.id]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [messages]);
-  const filteredUsers = useMemo(() => { const q = search.trim().toLowerCase(); if (!q) return users; return users.filter((u) => `${u.username || ""} ${u.display_name || ""}`.toLowerCase().includes(q)); }, [users, search]);
-
-  async function login() {
-    setError(""); setSuccess(""); const u = username.trim().toLowerCase(); if (!/^[a-z0-9_]{3,20}$/.test(u)) return setError(t.invalidUser); if (password.length < 6) return setError(t.shortPassword); setBusy(true);
-    try { const { error: e } = await supabase.auth.signInWithPassword({ email: usernameEmail(u), password }); if (e) throw e; setSuccess(t.signedIn); setPassword(""); }
-    catch (e) { setError(authError(e, t)); } finally { setBusy(false); }
-  }
-
-  async function register() {
-    setError(""); setSuccess(""); const u = username.trim().toLowerCase(), d = displayName.trim(), c = contactValue.trim();
-    if (!/^[a-z0-9_]{3,20}$/.test(u)) return setError(t.invalidUser); if (!d || password.length < 6) return setError(t.registerRequired); if (d.length > 80) return setError(t.displayTooLong); if (shareContact && !c) return setError(t.contactRequired); if (shareContact && !CONTACT_TYPES.has(contactType)) return setError(t.invalidContactType); setBusy(true);
-    try {
-      const { data, error: e } = await supabase.auth.signUp({ email: usernameEmail(u), password, options: { data: { username: u, display_name: d, contact_type: shareContact ? contactType : null, contact_value: shareContact ? c : null } } });
-      if (e) throw e; if (!data?.user) throw new Error("signup_failed"); setSuccess(data.session ? t.signedIn : t.accountCreated); setAuthMode("login"); setUsername(u); setPassword(""); setDisplayName(""); setShareContact(false); setContactValue("");
-    } catch (e) { setError(authError(e, t)); } finally { setBusy(false); }
-  }
-
-  async function openChat(user) {
-    if (!session?.user?.id || !user?.id) return; setSelected(user); setMessages([]); setError(""); setUnread((x) => ({ ...x, [user.id]: 0 }));
-    const { data, error: e } = await supabase.from("messages").select("id, sender_id, receiver_id, content, message_type, file_name, created_at").or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${session.user.id})`).order("created_at", { ascending: true }).limit(500);
-    if (e) return reportError(e, t.messageFailed); setMessages(data || []);
-  }
-
-  async function sendMessage() {
-    const content = message.trim(); if (!content || !selected || !session?.user?.id || busy) return; if (content.length > MAX_MESSAGE_LENGTH) return setError(t.messageTooLong); setBusy(true); setError("");
-    try { const { data, error: e } = await supabase.from("messages").insert({ sender_id: session.user.id, receiver_id: selected.id, content, message_type: "text" }).select("id, sender_id, receiver_id, content, message_type, file_name, created_at").single(); if (e) throw e; setMessages((x) => x.some((i) => i.id === data.id) ? x : [...x, data]); setMessage(""); }
-    catch (e) { reportError(e, t.messageFailed); } finally { setBusy(false); }
-  }
-
-  async function sendFile(event) {
-    const file = event.target.files?.[0]; event.target.value = ""; if (!file || !selected || !session?.user?.id || busy) return; if (file.size > MAX_FILE_SIZE) return setError(t.fileTooLarge); const originalName = String(file.name || t.file); if (originalName.length > MAX_FILENAME_LENGTH) return setError(t.fileNameTooLong); setBusy(true); setError(""); let path = "";
-    try {
-      const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, MAX_FILENAME_LENGTH) || "file"; path = `${session.user.id}/${crypto.randomUUID()}-${safeName}`;
-      const { error: e } = await supabase.storage.from(FILE_BUCKET).upload(path, file, { upsert: false, contentType: file.type || "application/octet-stream", cacheControl: "3600" }); if (e) throw e;
-      const { data, error: me } = await supabase.from("messages").insert({ sender_id: session.user.id, receiver_id: selected.id, content: path, message_type: "file", file_name: originalName }).select("id, sender_id, receiver_id, content, message_type, file_name, created_at").single(); if (me) throw me; setMessages((x) => x.some((i) => i.id === data.id) ? x : [...x, data]);
-    } catch (e) { reportError(e, t.uploadFailed); if (path) { const { error: ce } = await supabase.storage.from(FILE_BUCKET).remove([path]); if (ce) console.error(ce); } } finally { setBusy(false); }
-  }
-
-  async function openFile(item) {
-    if (!item?.content) return; const { data, error: e } = await supabase.storage.from(FILE_BUCKET).createSignedUrl(item.content, 3600, { download: item.file_name || true }); if (e || !data?.signedUrl) return reportError(e, t.uploadFailed); window.open(data.signedUrl, "_blank", "noopener,noreferrer");
-  }
+  const filteredUsers = useMemo(() => { const q = search.trim().toLowerCase(); return q ? users.filter(u => `${u.username || ""} ${u.display_name || ""}`.toLowerCase().includes(q)) : users; }, [users, search]);
+  async function login() { setError(""); setSuccess(""); const u = username.trim().toLowerCase(); if (!/^[a-z0-9_]{3,20}$/.test(u)) return setError(t.invalidUser); if (password.length < 6) return setError(t.shortPassword); setBusy(true); try { const { error: e } = await supabase.auth.signInWithPassword({ email: usernameEmail(u), password }); if (e) throw e; setSuccess(t.signedIn); setPassword(""); } catch (e) { setError(authError(e, t)); } finally { setBusy(false); } }
+  async function openChat(user) { if (!session?.user?.id || !user?.id) return; setSelected(user); setMessages([]); setError(""); setUnread(x => ({ ...x, [user.id]: 0 })); const { data, error: e } = await supabase.from("messages").select("id,sender_id,receiver_id,content,message_type,file_name,created_at").or(`and(sender_id.eq.${session.user.id},receiver_id.eq.${user.id}),and(sender_id.eq.${user.id},receiver_id.eq.${session.user.id})`).order("created_at", { ascending: true }).limit(500); if (e) return reportError(e, t.messageFailed); setMessages(data || []); }
+  async function sendMessage() { const content = message.trim(); if (!content || !selected || !session?.user?.id || busy) return; if (content.length > MAX_MESSAGE_LENGTH) return setError(t.messageTooLong); setBusy(true); setError(""); try { const { data, error: e } = await supabase.from("messages").insert({ sender_id: session.user.id, receiver_id: selected.id, content, message_type: "text" }).select("id,sender_id,receiver_id,content,message_type,file_name,created_at").single(); if (e) throw e; setMessages(x => x.some(i => i.id === data.id) ? x : [...x, data]); setMessage(""); } catch (e) { reportError(e, t.messageFailed); } finally { setBusy(false); } }
+  async function sendFile(event) { const file = event.target.files?.[0]; event.target.value = ""; if (!file || !selected || !session?.user?.id || busy) return; if (file.size > MAX_FILE_SIZE) return setError(t.fileTooLarge); const originalName = String(file.name || t.file); if (originalName.length > MAX_FILENAME_LENGTH) return setError(t.fileNameTooLong); setBusy(true); setError(""); let path = ""; try { const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, MAX_FILENAME_LENGTH) || "file"; path = `${session.user.id}/${crypto.randomUUID()}-${safeName}`; const { error: e } = await supabase.storage.from(FILE_BUCKET).upload(path, file, { upsert: false, contentType: file.type || "application/octet-stream", cacheControl: "3600" }); if (e) throw e; const { data, error: me } = await supabase.from("messages").insert({ sender_id: session.user.id, receiver_id: selected.id, content: path, message_type: "file", file_name: originalName }).select("id,sender_id,receiver_id,content,message_type,file_name,created_at").single(); if (me) throw me; setMessages(x => x.some(i => i.id === data.id) ? x : [...x, data]); } catch (e) { reportError(e, t.uploadFailed); if (path) await supabase.storage.from(FILE_BUCKET).remove([path]); } finally { setBusy(false); } }
+  async function openFile(item) { if (!item?.content) return; const { data, error: e } = await supabase.storage.from(FILE_BUCKET).createSignedUrl(item.content, 3600, { download: item.file_name || true }); if (e || !data?.signedUrl) return reportError(e, t.uploadFailed); window.open(data.signedUrl, "_blank", "noopener,noreferrer"); }
   async function logout() { setBusy(true); try { const { error: e } = await supabase.auth.signOut(); if (e) throw e; setSuccess(t.signedOut); } catch (e) { reportError(e); } finally { setBusy(false); } }
-
   const direction = lang === "fa" ? "rtl" : "ltr";
   if (loading) return <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}><div className="loading-screen"><div className="brand-mark">M</div><span>{t.loading}</span></div></main>;
-
-  if (!session) return <main className={`auth-page ${dark ? "theme-dark" : "theme-light"}`} dir={direction}><div className="auth-orbit" /><section className="auth-card" aria-label={t.brand}>
-    <header className="auth-top"><div className="brand-lockup"><div className="brand-mark">M</div><div><div className="brand-name">{t.brand}</div><div className="brand-tagline">{t.tagline}</div></div></div><div className="top-actions"><button type="button" className="ghost-button" onClick={() => setLang((v) => v === "fa" ? "en" : "fa")} aria-label="language">{lang === "fa" ? "EN" : "فا"}</button><button type="button" className="icon-button" onClick={() => setDark((v) => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></header>
-    <div className="auth-tabs" role="tablist"><button type="button" role="tab" aria-selected={authMode === "login"} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setError(""); }}>{t.login}</button><button type="button" role="tab" aria-selected={authMode === "register"} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setError(""); }}>{t.register}</button></div>
-    <div className="auth-form">{authMode === "register" && <label><span>{t.display}</span><input value={displayName} maxLength={80} onChange={(e) => setDisplayName(e.target.value)} placeholder={t.displayHint} autoComplete="name" /></label>}<label><span>{t.username}</span><input value={username} maxLength={20} onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())} placeholder="username" autoComplete="username" spellCheck="false" /></label><label><span>{t.password}</span><input value={password} maxLength={128} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} onKeyDown={(e) => { if (e.key === "Enter") authMode === "login" ? login() : register(); }} /></label>
-      {authMode === "register" && <div className="contact-box"><label className="check-line"><input type="checkbox" checked={shareContact} onChange={(e) => setShareContact(e.target.checked)} /><span>{t.contactQuestion} <small>({t.optional})</small></span></label>{shareContact && <div className="contact-fields"><select value={contactType} onChange={(e) => setContactType(e.target.value)} aria-label={t.contact}><option value="telegram">{t.telegram}</option><option value="instagram">{t.instagram}</option><option value="email">{t.email}</option><option value="phone">{t.phone}</option><option value="other">{t.other}</option></select><input value={contactValue} maxLength={160} onChange={(e) => setContactValue(e.target.value)} placeholder={t.contactPlaceholder} /></div>}</div>}
-    </div>
-    {error && <div className="notice error" role="alert">{error}</div>}{success && <div className="notice success" role="status">{success}</div>}<button type="button" className="primary-button" disabled={busy} onClick={authMode === "login" ? login : register}>{busy ? t.pleaseWait : authMode === "login" ? t.signIn : t.create}</button><button type="button" className="support-link" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button>
-  </section>{panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}</main>;
-
-  return <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}><div className="app-frame"><aside className={`sidebar ${selected ? "chat-selected" : ""}`}>
-    <div className="side-header"><div className="brand-lockup"><div className="brand-mark small">M</div><div><div className="brand-name">{t.brand}</div><div className="side-me">@{profile?.username || "user"}</div></div></div><div className="top-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" />{Object.values(unread).reduce((sum, value) => sum + value, 0) > 0 && <span className="notification-dot" />}</button><button type="button" className="icon-button" onClick={() => setDark((v) => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></div>
-    <button type="button" className="profile-pill" onClick={() => setPanel("profile")}><div className="avatar">{firstLetter(profile?.display_name || profile?.username)}</div><div className="profile-text"><strong>{profile?.display_name || profile?.username}</strong><span>@{profile?.username}</span></div><span className="chevron">›</span></button>
-    <div className="search-wrap"><Icon name="search" /><input value={search} maxLength={50} onChange={(e) => setSearch(e.target.value)} placeholder={t.search} aria-label={t.search} /></div><div className="section-title"><span>{t.users}</span><span className="count-badge">{users.length}</span></div>
-    <div className="user-list">{filteredUsers.map((user) => <button type="button" className={`user-row ${selected?.id === user.id ? "selected" : ""}`} key={user.id} onClick={() => openChat(user)}><div className="avatar">{firstLetter(user.display_name || user.username)}</div><div className="user-meta"><strong>{user.display_name || user.username}</strong><span>@{user.username}</span></div>{!!unread[user.id] && <span className="unread-badge">{unread[user.id] > 99 ? "99+" : unread[user.id]}</span>}</button>)}{!filteredUsers.length && <div className="empty-list">{t.noUsers}</div>}</div>
-    <div className="side-footer"><button type="button" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button><button type="button" onClick={() => setPanel("profile")}><Icon name="user" />{t.profile}</button><button type="button" onClick={logout} disabled={busy}><span className="logout-dot" />{t.logout}</button></div>
-  </aside><section className="chat-panel">{!selected ? <div className="empty-chat"><div className="empty-icon"><span>✦</span></div><h1>{t.startChat}</h1><p>{t.startChatHint}</p></div> : <><header className="chat-header"><div className="chat-person"><button type="button" className="back-button" onClick={() => setSelected(null)} aria-label={t.back}>‹</button><div className="avatar large">{firstLetter(selected.display_name || selected.username)}</div><div><h2>{selected.display_name || selected.username}</h2><span>@{selected.username}</span></div></div><div className="chat-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" /></button></div></header><div className="messages" aria-live="polite">{!messages.length && <div className="empty-messages"><div className="empty-icon small">✦</div><strong>{t.noMessages}</strong><span>{t.firstMessage}</span></div>}{messages.map((item) => { const mine = item.sender_id === session.user.id; return <div key={item.id} className={`message-line ${mine ? "mine" : "theirs"}`}><div className={`message-bubble ${mine ? "mine" : "theirs"}`}>{item.message_type === "file" ? <button type="button" className="file-message" onClick={() => openFile(item)} title={t.openFile}><Icon name="paperclip" /><span>{item.file_name || t.file}</span></button> : <div className="message-content">{item.content}</div>}<time dateTime={item.created_at}>{formatTime(item.created_at, lang)}</time></div></div>; })}<div ref={endRef} /></div><div className="composer"><button type="button" className="icon-button attach" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={t.file}><Icon name="paperclip" /></button><input ref={fileRef} type="file" hidden onChange={sendFile} /><textarea value={message} maxLength={MAX_MESSAGE_LENGTH} onChange={(e) => setMessage(e.target.value)} placeholder={t.write} rows={1} aria-label={t.write} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} /><button type="button" className="send-button" onClick={sendMessage} disabled={busy || !message.trim()} aria-label={t.send}><Icon name="send" /></button></div></>}</section></div>
-    {error && <div className="toast error" role="alert"><span>{error}</span><div className="toast-actions"><button type="button" onClick={() => setPanel("support")}>{t.supportFromError}</button><button type="button" onClick={() => setError("")} aria-label={t.close}>×</button></div></div>}
-    {success && <div className="toast success" role="status"><span>{success}</span><button type="button" onClick={() => setSuccess("")} aria-label={t.close}>×</button></div>}
-    {panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}
-    {panel === "notifications" && <Modal title={t.notifications} onClose={() => setPanel(null)} closeLabel={t.close}><div className="notice-card"><Icon name="support" /><div><strong>{t.notificationSupport}</strong><p>{t.notificationSupportText}</p><button type="button" className="modal-button" onClick={() => setPanel("support")}>{t.support}</button></div></div><p className="muted">{t.noNotifications}</p></Modal>}
-    {panel === "profile" && <Modal title={t.profile} onClose={() => setPanel(null)} closeLabel={t.close}><div className="profile-modal"><div className="avatar huge">{firstLetter(profile?.display_name || profile?.username)}</div><h3>{profile?.display_name || profile?.username}</h3><span>@{profile?.username}</span>{profile?.contact_value && <div className="contact-chip">{profile.contact_type}: {profile.contact_value}</div>}</div></Modal>}
-  </main>;
+  if (!session) return <main className={`auth-page ${dark ? "theme-dark" : "theme-light"}`} dir={direction}><div className="auth-orbit" /><section className="auth-card" aria-label={t.brand}><header className="auth-top"><div className="brand-lockup"><div className="brand-mark">M</div><div><div className="brand-name">{t.brand}</div><div className="brand-tagline">{t.tagline}</div></div></div><div className="top-actions"><button type="button" className="ghost-button" onClick={() => setLang(v => v === "fa" ? "en" : "fa")} aria-label="language">{lang === "fa" ? "EN" : "فا"}</button><button type="button" className="icon-button" onClick={() => setDark(v => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></header><div className="auth-tabs" role="tablist"><button type="button" role="tab" aria-selected="true" className="active">{t.login}</button></div><div className="auth-form"><label><span>{t.username}</span><input value={username} maxLength={20} onChange={e => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())} placeholder="username" autoComplete="username" spellCheck="false" /></label><label><span>{t.password}</span><input value={password} maxLength={128} onChange={e => setPassword(e.target.value)} placeholder="••••••••" type="password" autoComplete="current-password" onKeyDown={e => { if (e.key === "Enter") login(); }} /></label></div>{error && <div className="notice error" role="alert">{error}</div>}{success && <div className="notice success" role="status">{success}</div>}<button type="button" className="primary-button" disabled={busy} onClick={login}>{busy ? t.pleaseWait : t.signIn}</button><div className="registration-note"><strong>{lang === "fa" ? "ثبت‌نام فقط از پشتیبانی" : "Registration via support only"}</strong><span>{t.supportText}</span></div><button type="button" className="support-link" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button></section>{panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}</main>;
+  return <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}><div className="app-frame"><aside className={`sidebar ${selected ? "chat-selected" : ""}`}><div className="side-header"><div className="brand-lockup"><div className="brand-mark small">M</div><div><div className="brand-name">{t.brand}</div><div className="side-me">@{profile?.username || "user"}{profile?.is_verified && <span className="verified-badge">✓</span>}</div></div></div><div className="top-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" />{Object.values(unread).reduce((sum, value) => sum + value, 0) > 0 && <span className="notification-dot" />}</button><button type="button" className="icon-button" onClick={() => setDark(v => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></div><button type="button" className="profile-pill" onClick={() => setPanel("profile")}><div className="avatar">{firstLetter(profile?.display_name || profile?.username)}</div><div className="profile-text"><strong>{profile?.display_name || profile?.username}{profile?.is_verified && <span className="verified-badge">✓</span>}</strong><span>@{profile?.username}</span></div><span className="chevron">›</span></button><div className="search-wrap"><Icon name="search" /><input value={search} maxLength={50} onChange={e => setSearch(e.target.value)} placeholder={t.search} aria-label={t.search} /></div><div className="section-title"><span>{t.users}</span><span className="count-badge">{users.length}</span></div><div className="user-list">{filteredUsers.map(user => <button type="button" className={`user-row ${selected?.id === user.id ? "selected" : ""}`} key={user.id} onClick={() => openChat(user)}><div className="avatar">{firstLetter(user.display_name || user.username)}</div><div className="user-meta"><strong>{user.display_name || user.username}{user.is_verified && <span className="verified-badge">✓</span>}</strong><span>@{user.username}</span></div>{!!unread[user.id] && <span className="unread-badge">{unread[user.id] > 99 ? "99+" : unread[user.id]}</span>}</button>)}{!filteredUsers.length && <div className="empty-list">{t.noUsers}</div>}</div><div className="side-footer"><button type="button" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button><button type="button" onClick={() => setPanel("profile")}><Icon name="user" />{t.profile}</button><button type="button" onClick={logout} disabled={busy}><span className="logout-dot" />{t.logout}</button></div></aside><section className="chat-panel">{!selected ? <div className="empty-chat"><div className="empty-icon"><span>✦</span></div><h1>{t.startChat}</h1><p>{t.startChatHint}</p></div> : <><header className="chat-header"><div className="chat-person"><button type="button" className="back-button" onClick={() => setSelected(null)} aria-label={t.back}>‹</button><div className="avatar large">{firstLetter(selected.display_name || selected.username)}</div><div><h2>{selected.display_name || selected.username}{selected.is_verified && <span className="verified-badge">✓</span>}</h2><span>@{selected.username}</span></div></div><div className="chat-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" /></button></div></header><div className="messages" aria-live="polite">{!messages.length && <div className="empty-messages"><div className="empty-icon small">✦</div><strong>{t.noMessages}</strong><span>{t.firstMessage}</span></div>}{messages.map(item => { const mine = item.sender_id === session.user.id; return <div key={item.id} className={`message-line ${mine ? "mine" : "theirs"}`}><div className={`message-bubble ${mine ? "mine" : "theirs"}`}>{item.message_type === "file" ? <button type="button" className="file-message" onClick={() => openFile(item)} title={t.openFile}><Icon name="paperclip" /><span>{item.file_name || t.file}</span></button> : <div className="message-content">{item.content}</div>}<time dateTime={item.created_at}>{formatTime(item.created_at, lang)}</time></div></div>; })}<div ref={endRef} /></div><div className="composer"><button type="button" className="icon-button attach" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={t.file}><Icon name="paperclip" /></button><input ref={fileRef} type="file" hidden onChange={sendFile} /><textarea value={message} maxLength={MAX_MESSAGE_LENGTH} onChange={e => setMessage(e.target.value)} placeholder={t.write} rows={1} aria-label={t.write} onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} /><button type="button" className="send-button" onClick={sendMessage} disabled={busy || !message.trim()} aria-label={t.send}><Icon name="send" /></button></div></>}</section></div>{error && <div className="toast error" role="alert"><span>{error}</span><div className="toast-actions"><button type="button" onClick={() => setPanel("support")}>{t.supportFromError}</button><button type="button" onClick={() => setError("")} aria-label={t.close}>×</button></div></div>}{success && <div className="toast success" role="status"><span>{success}</span><button type="button" onClick={() => setSuccess("")} aria-label={t.close}>×</button></div>}{panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}{panel === "notifications" && <Modal title={t.notifications} onClose={() => setPanel(null)} closeLabel={t.close}><div className="notice-card"><Icon name="support" /><div><strong>{t.notificationSupport}</strong><p>{t.notificationSupportText}</p><button type="button" className="modal-button" onClick={() => setPanel("support")}>{t.support}</button></div></div><p className="muted">{t.noNotifications}</p></Modal>}{panel === "profile" && <Modal title={t.profile} onClose={() => setPanel(null)} closeLabel={t.close}><div className="profile-modal"><div className="avatar huge">{firstLetter(profile?.display_name || profile?.username)}</div><h3>{profile?.display_name || profile?.username}{profile?.is_verified && <span className="verified-badge">✓</span>}</h3><span>@{profile?.username}</span>{profile?.contact_value && <div className="contact-chip">{profile.contact_type}: {profile.contact_value}</div>}</div></Modal>}</main>;
 }
