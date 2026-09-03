@@ -1,12 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { createClient } from "@supabase/supabase-js";
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
-);
 
 export default function Home() {
   const [mode, setMode] = useState("login");
@@ -18,9 +13,26 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
+  // ساخت کلاینت فقط وقتی envها موجود باشند (جلوگیری از ارور در build)
+  const supabase = useMemo(() => {
+    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+    if (!url || !key) {
+      return null;
+    }
+
+    return createClient(url, key);
+  }, []);
+
   async function register() {
     if (!username || !password) {
       setMessage("نام کاربری و رمز عبور را وارد کنید.");
+      return;
+    }
+
+    if (!supabase) {
+      setMessage("تنظیمات Supabase هنوز کامل نیست.");
       return;
     }
 
