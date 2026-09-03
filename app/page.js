@@ -1,17 +1,23 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 export default function Home() {
   const [mode, setMode] = useState("login");
-
   const [username, setUsername] = useState("");
   const [userId, setUserId] = useState("");
   const [password, setPassword] = useState("");
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // چت
+  const [messages, setMessages] = useState([]);
+  const [newMessage, setNewMessage] = useState("");
+  const [sending, setSending] = useState(false);
+  const messagesEndRef = useRef(null);
 
   const supabase = useMemo(() => {
     const url =
@@ -25,28 +31,65 @@ export default function Home() {
     return createClient(url, key);
   }, []);
 
+  // اسکرول به آخرین پیام
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // دریافت پیام‌ها + realtime
+  useEffect(() => {
+    if (!currentUser || !supabase) return;
+
+    // اول پیام‌های قبلی رو بگیر
+    async function loadMessages() {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("*")
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      if (!error && data) {
+        setMessages(data);
+      }
+    }
+
+    loadMessages();
+
+    // گوش دادن به پیام‌های جدید (realtime)
+    const channel = supabase
+      .channel("messages")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          setMessages((prev) => [...prev, payload.new]);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [currentUser, supabase]);
+
   // ====================== ثبت‌نام ======================
   async function register() {
     if (!username || !password) {
       setMessage("نام کاربری و رمز عبور را وارد کنید.");
       return;
     }
-
     if (username.length < 3) {
       setMessage("نام کاربری باید حداقل ۳ کاراکتر باشد.");
       return;
     }
-
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       setMessage("نام کاربری فقط حروف انگلیسی، عدد و _ مجاز است.");
       return;
     }
-
     if (password.length < 4) {
       setMessage("رمز عبور باید حداقل ۴ کاراکتر باشد.");
       return;
     }
-
     if (!supabase) {
       setMessage("اتصال به سرور برقرار نیست.");
       return;
@@ -56,7 +99,6 @@ export default function Home() {
     setMessage("");
 
     try {
-      // چک تکراری
       const { data: existing } = await supabase
         .from("users")
         .select("id")
@@ -91,13 +133,12 @@ export default function Home() {
 
   // ====================== ورود ======================
   async function login() {
-    const loginName = mode === "login" ? userId : username;
+    const loginName = userId || username;
 
     if (!loginName || !password) {
       setMessage("نام کاربری و رمز عبور را وارد کنید.");
       return;
     }
-
     if (!supabase) {
       setMessage("اتصال به سرور برقرار نیست.");
       return;
@@ -124,8 +165,11 @@ export default function Home() {
         return;
       }
 
-      setMessage(`خوش آمدید ${data.username}!`);
-      // اینجا می‌تونی صفحه چت رو باز کنی
+      setCurrentUser(data);
+      setMessage("");
+      setPassword("");
+      setUserId("");
+      setUsername("");
     } catch (err) {
       setMessage("خطایی رخ داد. دوباره تلاش کنید.");
     } finally {
@@ -133,6 +177,224 @@ export default function Home() {
     }
   }
 
+  // ====================== ارسال پیام ======================
+  async function sendMessage() {
+    if (!newMessage.trim() || !currentUser || !supabase) return;
+
+    setSending(true);
+
+    try {
+      const { error } = await supabase.from("messages").insert({
+        sender: currentUser.username,
+        content: newMessage.trim()
+      });
+
+      if (error) {
+        alert("خطا در ارسال پیام: " + error.message);
+      } else {
+        setNewMessage("");
+      }
+    } catch (err) {
+      alert("خطا در ارسال پیام");
+    } finally {
+      setSending(false);
+    }
+  }
+
+  // ====================== خروج ======================
+  function logout() {
+    setCurrentUser(null);
+    setMessages([]);
+    setMode("login");
+    setMessage("");
+  }
+
+  // ====================== صفحه چت ======================
+  if (currentUser) {
+    return (
+      <main className="page" style={{ padding: "10px" }}>
+        <div
+          className="card"
+          style={{
+            maxWidth: "600px",
+            width: "100%",
+            height: "90vh",
+            display: "flex",
+            flexDirection: "column",
+            padding: "0",
+            overflow: "hidden"
+          }}
+        >
+          {/* هدر */}
+          <div
+            style={{
+              padding: "16px 20px",
+              borderBottom: "1px solid #e2e8f0",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              background: "#0f172a",
+              color: "white"
+            }}
+          >
+            <div>
+              <div style={{ fontWeight: "bold", fontSize: "18px" }}>
+                Private Messenger
+              </div>
+              <div style={{ fontSize: "13px", opacity: 0.8 }}>
+                {currentUser.username}
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              style={{
+                background: "#ef4444",
+                color: "white",
+                border: "none",
+                padding: "8px 14px",
+                borderRadius: "8px",
+                cursor: "pointer",
+                fontSize: "14px"
+              }}
+            >
+              خروج
+            </button>
+          </div>
+
+          {/* لیست پیام‌ها */}
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              padding: "16px",
+              background: "#f8fafc",
+              display: "flex",
+              flexDirection: "column",
+              gap: "10px"
+            }}
+          >
+            {messages.length === 0 && (
+              <div
+                style={{
+                  textAlign: "center",
+                  color: "#94a3b8",
+                  marginTop: "40px"
+                }}
+              >
+                هنوز پیامی نیست. اولین پیام را بفرستید!
+              </div>
+            )}
+
+            {messages.map((msg) => {
+              const isMe = msg.sender === currentUser.username;
+              return (
+                <div
+                  key={msg.id}
+                  style={{
+                    alignSelf: isMe ? "flex-end" : "flex-start",
+                    maxWidth: "75%"
+                  }}
+                >
+                  <div
+                    style={{
+                      background: isMe ? "#3b82f6" : "white",
+                      color: isMe ? "white" : "#0f172a",
+                      padding: "10px 14px",
+                      borderRadius: isMe
+                        ? "16px 16px 4px 16px"
+                        : "16px 16px 16px 4px",
+                      boxShadow: "0 1px 2px rgba(0,0,0,0.08)",
+                      fontSize: "15px",
+                      lineHeight: "1.4"
+                    }}
+                  >
+                    {!isMe && (
+                      <div
+                        style={{
+                          fontSize: "12px",
+                          fontWeight: "bold",
+                          marginBottom: "4px",
+                          opacity: 0.8
+                        }}
+                      >
+                        {msg.sender}
+                      </div>
+                    )}
+                    {msg.content}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "11px",
+                      color: "#94a3b8",
+                      marginTop: "3px",
+                      textAlign: isMe ? "right" : "left",
+                      padding: "0 4px"
+                    }}
+                  >
+                    {new Date(msg.created_at).toLocaleTimeString("fa-IR", {
+                      hour: "2-digit",
+                      minute: "2-digit"
+                    })}
+                  </div>
+                </div>
+              );
+            })}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* ورودی پیام */}
+          <div
+            style={{
+              padding: "12px 16px",
+              borderTop: "1px solid #e2e8f0",
+              display: "flex",
+              gap: "10px",
+              background: "white"
+            }}
+          >
+            <input
+              type="text"
+              placeholder="پیام بنویسید..."
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+              style={{
+                flex: 1,
+                padding: "12px 16px",
+                borderRadius: "24px",
+                border: "1px solid #e2e8f0",
+                outline: "none",
+                fontSize: "15px"
+              }}
+            />
+            <button
+              onClick={sendMessage}
+              disabled={sending || !newMessage.trim()}
+              style={{
+                background: "#3b82f6",
+                color: "white",
+                border: "none",
+                padding: "0 20px",
+                borderRadius: "24px",
+                cursor: "pointer",
+                fontWeight: "bold",
+                opacity: sending || !newMessage.trim() ? 0.6 : 1
+              }}
+            >
+              ارسال
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // ====================== صفحه ورود / ثبت‌نام ======================
   return (
     <main className="page">
       <div className="card">
@@ -213,4 +475,4 @@ export default function Home() {
       </div>
     </main>
   );
-}
+            }
