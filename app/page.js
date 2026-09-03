@@ -25,7 +25,7 @@ export default function Home() {
     return createClient(url, key);
   }, []);
 
-  // ثبت‌نام
+  // ====================== ثبت‌نام ======================
   async function register() {
     if (!username || !password) {
       setMessage("نام کاربری و رمز عبور را وارد کنید.");
@@ -56,6 +56,7 @@ export default function Home() {
     setMessage("");
 
     try {
+      // چک تکراری
       const { data: existing } = await supabase
         .from("users")
         .select("id")
@@ -64,7 +65,6 @@ export default function Home() {
 
       if (existing) {
         setMessage("این نام کاربری قبلاً ثبت شده است.");
-        setLoading(false);
         return;
       }
 
@@ -89,7 +89,7 @@ export default function Home() {
     }
   }
 
-  // ورود
+  // ====================== ورود ======================
   async function login() {
     const loginName = mode === "login" ? userId : username;
 
@@ -125,6 +125,7 @@ export default function Home() {
       }
 
       setMessage(`خوش آمدید ${data.username}!`);
+      // اینجا می‌تونی صفحه چت رو باز کنی
     } catch (err) {
       setMessage("خطایی رخ داد. دوباره تلاش کنید.");
     } finally {
@@ -212,4 +213,4 @@ export default function Home() {
       </div>
     </main>
   );
-        }
+}
