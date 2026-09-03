@@ -1,55 +1,63 @@
 # Messenger
 
-A lightweight bilingual messaging platform built with Next.js, Supabase and Cloudflare Workers.
+A lightweight messaging platform built with Next.js, React, Supabase and Cloudflare Workers.
 
 ## Stack
 
-- Next.js 15.5.25
-- React 19
-- Supabase Auth, Postgres, Realtime and Storage
-- OpenNext for Cloudflare Workers
+- Next.js App Router
+- React
+- Supabase Auth, Postgres, Realtime and private Storage
+- Cloudflare Workers + OpenNext
 
 ## Supabase setup
 
-Run `supabase/schema.sql` once in the Supabase SQL Editor.
+1. Open the Supabase project.
+2. Go to **SQL Editor → New query**.
+3. Copy all of `supabase/schema.sql` from this repository.
+4. Paste it and click **Run**.
+5. In **Authentication → Providers → Email**, keep **Confirm email disabled**. The app uses an internal username-based email address for Supabase Auth.
 
-For username/password accounts using the internal `@messenger.local` address, disable Supabase Auth email confirmation. No real email is collected by this application.
-
-The SQL migration creates:
-
-- `profiles`
-- `messages`
-- RLS policies for authenticated users
-- automatic profile creation from Auth metadata
-- Realtime publication for `messages`
-- a private `chat-files` Storage bucket
-- Storage RLS for sender/receiver access
+The SQL enables RLS, creates participant-only message policies, creates the profile trigger, enables Realtime for messages, and creates the private `chat-files` bucket with a 15 MB limit.
 
 ## Cloudflare Workers Builds
 
-The project intentionally does not require Supabase variables in Cloudflare Variables & Secrets. The browser uses the Supabase **publishable** key, which is designed to be public. Security comes from Supabase Auth and RLS. Never place a Supabase secret/service-role key in this repository or browser code.
-
-Recommended Workers Builds configuration:
+Connect the GitHub repository and use:
 
 - Production branch: `main`
-- Build command: `npm run build` or `bun run build`
-- Deploy command: `npm run deploy` or `bun run deploy`
-- Root directory: repository root
+- Build command: `npm run build`
+- Deploy command: `npx wrangler deploy`
+- Root directory: `/`
+- Non-production builds: optional
+- Build caching: enabled
 
-Do not use the old interactive automatic Next.js migration command. This repository already contains `wrangler.jsonc` and an OpenNext configuration.
+Do **not** add Supabase variables to Cloudflare for this version. The browser client uses the Supabase project URL and a Supabase **publishable** key. A publishable key is designed to be exposed to browser code; RLS is what protects the data.
 
-## Local commands
+Never put a Supabase secret key or service-role key in `app/page.js`, GitHub, or browser code.
 
-```bash
-npm install
-npm run build
-npm run deploy
-```
+## Security model
 
-## Security notes
+- Supabase RLS protects profiles and messages.
+- Users can read only messages where they are sender or receiver.
+- Users can insert messages only as themselves.
+- File storage is private and protected by Storage RLS.
+- File paths are stored under the sender's user ID.
+- Files are limited to 15 MB by the bucket configuration and the client.
+- Message text is limited to 4,000 characters by the client.
+- The application does not claim end-to-end encryption. Supabase/database and transport security are not the same thing as E2EE.
 
-The public Supabase publishable key is not a secret. Do not replace it with a secret key. The database and Storage RLS policies are the security boundary.
+## Support
 
-Files are stored in a private bucket and the client requests time-limited signed URLs instead of public file URLs.
+The application includes an in-app support panel and an error-state support action for:
 
-Messages are not end-to-end encrypted. This project provides authenticated, RLS-protected messaging, not E2EE.
+- Telegram: `https://t.me/parhamsoleimanybot`
+- Utino support: `https://utino.org/chat/supportusername`
+- iParham: `https://iparham.com`
+- WDNER: `https://wdner.co`
+- Utino: `https://utino.org`
+
+Support username: `parham`
+Support display name: `Parham Soleimany`
+
+## Deployment flow
+
+Workers Builds runs the build command first and then the deploy command. The repository's `build` script creates the OpenNext output; `npx wrangler deploy` publishes that already-built Worker. This avoids building the application a second time during the deploy step.
