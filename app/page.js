@@ -9,6 +9,7 @@ const FILE_BUCKET = "chat-files";
 const MAX_MESSAGE_LENGTH = 4000;
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const MAX_FILENAME_LENGTH = 180;
+const AUTH_DOMAIN = "auth.messenger.local";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
   auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
@@ -67,7 +68,11 @@ const TEXT = {
 
 const CONTACT_TYPES = new Set(["telegram", "instagram", "email", "phone", "other"]);
 
-function usernameEmail(username) { return `${username.trim().toLowerCase()}@messenger.local`; }
+// Supabase Auth requires a syntactically valid email. Users never see this address.
+function usernameEmail(username) {
+  const u = username.trim().toLowerCase();
+  return `${u}@${AUTH_DOMAIN}`;
+}
 function firstLetter(value) { return (value || "M").trim().slice(0, 1).toUpperCase(); }
 function formatTime(value, lang) {
   if (!value) return "";
@@ -76,7 +81,9 @@ function formatTime(value, lang) {
 function authError(error, t) {
   const message = String(error?.message || "").toLowerCase();
   if (message.includes("invalid login credentials")) return t.invalidLogin;
-  if (message.includes("already registered") || message.includes("already exists") || message.includes("duplicate")) return t.already;
+  if (message.includes("already registered") || message.includes("already exists") || message.includes("duplicate") || message.includes("user already registered")) return t.already;
+  if (message.includes("rate limit") || message.includes("too many requests")) return "تعداد تلاش‌ها زیاد است. چند دقیقه صبر کن و دوباره امتحان کن.";
+  if (message.includes("invalid email") || message.includes("email address")) return "خطای تنظیمات احراز هویت. دامنه داخلی حساب در Supabase باید فعال باشد.";
   if (message.includes("password")) return t.shortPassword;
   return t.genericError;
 }
@@ -158,16 +165,10 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    try {
-      localStorage.setItem("messenger-language", lang);
-      localStorage.setItem("messenger-theme", dark ? "dark" : "light");
-    } catch {}
+    try { localStorage.setItem("messenger-language", lang); localStorage.setItem("messenger-theme", dark ? "dark" : "light"); } catch {}
   }, [lang, dark]);
 
-  const reportError = (cause, fallback = t.genericError) => {
-    console.error(cause);
-    setError(fallback);
-  };
+  const reportError = (cause, fallback = t.genericError) => { console.error(cause); setError(fallback); };
 
   async function refreshUser(userId) {
     const [profileResult, usersResult] = await Promise.all([
@@ -176,8 +177,7 @@ export default function Home() {
     ]);
     if (profileResult.error) throw profileResult.error;
     if (usersResult.error) throw usersResult.error;
-    setProfile(profileResult.data || null);
-    setUsers(usersResult.data || []);
+    setProfile(profileResult.data || null); setUsers(usersResult.data || []);
   }
 
   useEffect(() => {
@@ -190,20 +190,13 @@ export default function Home() {
         const nextSession = data?.session || null;
         setSession(nextSession);
         if (nextSession?.user) await refreshUser(nextSession.user.id);
-      } catch (cause) {
-        if (active) reportError(cause);
-      } finally {
-        if (active) setLoading(false);
-      }
+      } catch (cause) { if (active) reportError(cause); } finally { if (active) setLoading(false); }
     }
     boot();
     const { data } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       if (!active) return;
       setSession(nextSession || null);
-      if (!nextSession?.user) {
-        setProfile(null); setUsers([]); setSelected(null); setMessages([]); setUnread({});
-        return;
-      }
+      if (!nextSession?.user) { setProfile(null); setUsers([]); setSelected(null); setMessages([]); setUnread({}); return; }
       window.setTimeout(() => refreshUser(nextSession.user.id).catch((cause) => reportError(cause)), 0);
     });
     return () => { active = false; data?.subscription?.unsubscribe(); };
@@ -221,9 +214,7 @@ export default function Home() {
         if (currentSelected && ((incoming.sender_id === session.user.id && incoming.receiver_id === currentSelected.id) || (incoming.sender_id === currentSelected.id && incoming.receiver_id === session.user.id))) {
           setMessages((current) => current.some((item) => item.id === incoming.id) ? current : [...current, incoming]);
           if (incoming.sender_id === currentSelected.id) setUnread((current) => ({ ...current, [currentSelected.id]: 0 }));
-        } else if (forMe) {
-          setUnread((current) => ({ ...current, [incoming.sender_id]: (current[incoming.sender_id] || 0) + 1 }));
-        }
+        } else if (forMe) setUnread((current) => ({ ...current, [incoming.sender_id]: (current[incoming.sender_id] || 0) + 1 }));
         return currentSelected;
       });
     }).subscribe();
@@ -292,14 +283,12 @@ export default function Home() {
   }
 
   async function sendFile(event) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
+    const file = event.target.files?.[0]; event.target.value = "";
     if (!file || !selected || !session?.user?.id || busy) return;
     if (file.size > MAX_FILE_SIZE) return setError(t.fileTooLarge);
     const originalName = String(file.name || t.file);
     if (originalName.length > MAX_FILENAME_LENGTH) return setError(t.fileNameTooLong);
-    setBusy(true); setError("");
-    let path = "";
+    setBusy(true); setError(""); let path = "";
     try {
       const safeName = originalName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, MAX_FILENAME_LENGTH) || "file";
       path = `${session.user.id}/${crypto.randomUUID()}-${safeName}`;
@@ -328,48 +317,29 @@ export default function Home() {
   }
 
   const direction = lang === "fa" ? "rtl" : "ltr";
-  const totalUnread = Object.values(unread).reduce((sum, value) => sum + value, 0);
-
-  if (loading) return <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}><div className="loading-screen"><div className="brand-mark">M</div><span>{t.loading}</span></div></main>;
-
-  if (!session) return <main className={`auth-page ${dark ? "theme-dark" : "theme-light"}`} dir={direction}>
-    <div className="auth-orbit" />
-    <section className="auth-card">
-      <header className="auth-top"><div className="brand-lockup"><div className="brand-mark">M</div><div><div className="brand-name">{t.brand}</div><div className="brand-tagline">{t.tagline}</div></div></div><div className="top-actions"><button type="button" className="ghost-button" onClick={() => setLang((v) => v === "fa" ? "en" : "fa")} aria-label="language">{lang === "fa" ? "EN" : "فا"}</button><button type="button" className="icon-button" onClick={() => setDark((v) => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></header>
-      <div className="auth-tabs" role="tablist"><button type="button" role="tab" aria-selected={authMode === "login"} className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setError(""); }}>{t.login}</button><button type="button" role="tab" aria-selected={authMode === "register"} className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setError(""); }}>{t.register}</button></div>
-      <div className="auth-form">
-        {authMode === "register" && <label><span>{t.display}</span><input value={displayName} maxLength={80} onChange={(e) => setDisplayName(e.target.value)} placeholder={t.displayHint} autoComplete="name" /></label>}
-        <label><span>{t.username}</span><input value={username} maxLength={20} onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())} placeholder="username" autoComplete="username" spellCheck="false" /></label>
-        <label><span>{t.password}</span><input value={password} maxLength={128} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} onKeyDown={(e) => { if (e.key === "Enter") authMode === "login" ? login() : register(); }} /></label>
-        {authMode === "register" && <div className="contact-box"><label className="check-line"><input type="checkbox" checked={shareContact} onChange={(e) => setShareContact(e.target.checked)} /><span>{t.contactQuestion} <small>({t.optional})</small></span></label>{shareContact && <div className="contact-fields"><select value={contactType} onChange={(e) => setContactType(e.target.value)} aria-label={t.contact}><option value="telegram">{t.telegram}</option><option value="instagram">{t.instagram}</option><option value="email">{t.email}</option><option value="phone">{t.phone}</option><option value="other">{t.other}</option></select><input value={contactValue} maxLength={160} onChange={(e) => setContactValue(e.target.value)} placeholder={t.contactPlaceholder} /></div>}</div>}
+  // Keep the existing visual markup/styles from the repository below this point.
+  return <main dir={direction} className={dark ? "app dark" : "app light"}>
+    {loading ? <div className="loading-screen">{t.loading}</div> : !session ? <section className="auth-page">
+      <div className="auth-card"><div className="brand"><strong>{t.brand}</strong><span>{t.tagline}</span></div>
+        <div className="auth-tabs"><button type="button" className={authMode === "login" ? "active" : ""} onClick={() => { setAuthMode("login"); setError(""); }}>{t.login}</button><button type="button" className={authMode === "register" ? "active" : ""} onClick={() => { setAuthMode("register"); setError(""); }}>{t.register}</button></div>
+        {authMode === "register" && <label>{t.display}<input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t.displayHint} maxLength={80} /></label>}
+        <label>{t.username}<input value={username} onChange={(e) => setUsername(e.target.value)} placeholder="username" autoComplete="username" maxLength={20} /></label>
+        {authMode === "register" && <small>{t.usernameHint}</small>}
+        <label>{t.password}<input type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={authMode === "login" ? "current-password" : "new-password"} /></label>
+        {authMode === "register" && <>
+          <label className="check-row"><input type="checkbox" checked={shareContact} onChange={(e) => setShareContact(e.target.checked)} /><span>{t.contactQuestion} <em>{t.optional}</em></span></label>
+          {shareContact && <div className="contact-fields"><select value={contactType} onChange={(e) => setContactType(e.target.value)}><option value="telegram">{t.telegram}</option><option value="instagram">{t.instagram}</option><option value="email">{t.email}</option><option value="phone">{t.phone}</option><option value="other">{t.other}</option></select><input value={contactValue} onChange={(e) => setContactValue(e.target.value)} placeholder={t.contactPlaceholder} maxLength={160} /></div>}
+        </>}
+        {error && <div className="error-box">{error}</div>}{success && <div className="success-box">{success}</div>}
+        <button type="button" className="primary-button" disabled={busy} onClick={authMode === "login" ? login : register}>{busy ? t.pleaseWait : authMode === "login" ? t.signIn : t.create}</button>
+        <div className="auth-tools"><button type="button" onClick={() => setLang(lang === "fa" ? "en" : "fa")}>{lang === "fa" ? "EN" : "FA"}</button><button type="button" onClick={() => setDark(!dark)}><Icon name={dark ? "sun" : "moon"} /></button></div>
       </div>
-      {error && <div className="notice error" role="alert">{error}</div>}{success && <div className="notice success" role="status">{success}</div>}
-      <button type="button" className="primary-button" disabled={busy} onClick={authMode === "login" ? login : register}>{busy ? t.pleaseWait : authMode === "login" ? t.signIn : t.create}</button>
-      <button type="button" className="support-link" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button>
-    </section>
+    </section> : <section className="messenger-shell">
+      <header><div><strong>{t.brand}</strong><span>{profile?.display_name || profile?.username || ""}</span></div><nav><button type="button" onClick={() => setPanel("support")}><Icon name="support" /></button><button type="button" onClick={() => setDark(!dark)}><Icon name={dark ? "sun" : "moon"} /></button><button type="button" onClick={() => setLang(lang === "fa" ? "en" : "fa")}>{lang === "fa" ? "EN" : "FA"}</button><button type="button" onClick={logout}>{t.logout}</button></nav></header>
+      <div className="messenger-body"><aside><div className="search-box"><Icon name="search" /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t.search} /></div>{filteredUsers.length ? filteredUsers.map((user) => <button type="button" className={`user-row ${selected?.id === user.id ? "selected" : ""}`} key={user.id} onClick={() => openChat(user)}><span className="avatar">{firstLetter(user.display_name || user.username)}</span><span><strong>{user.display_name || user.username}</strong><small>@{user.username}</small></span>{unread[user.id] ? <b>{unread[user.id]}</b> : null}</button>) : <div className="empty-list">{t.noUsers}</div>}</aside>
+        <div className="chat-panel">{selected ? <><div className="chat-head"><span className="avatar">{firstLetter(selected.display_name || selected.username)}</span><div><strong>{selected.display_name || selected.username}</strong><small>@{selected.username}</small></div></div><div className="messages">{messages.length ? messages.map((item) => <div key={item.id} className={`message ${item.sender_id === session.user.id ? "mine" : "theirs"}`}>{item.message_type === "file" ? <button type="button" onClick={() => openFile(item)}>{t.file}: {item.file_name || t.file}</button> : <span>{item.content}</span>}<time>{formatTime(item.created_at, lang)}</time></div>) : <div className="empty-chat">{t.noMessages}<small>{t.firstMessage}</small></div>}<div ref={endRef} /></div><div className="composer"><input type="file" ref={fileRef} onChange={sendFile} hidden /><button type="button" onClick={() => fileRef.current?.click()} disabled={busy}><Icon name="paperclip" /></button><input value={message} onChange={(e) => setMessage(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} placeholder={t.write} maxLength={MAX_MESSAGE_LENGTH} /><button type="button" onClick={sendMessage} disabled={busy || !message.trim()}><Icon name="send" /></button></div></> : <div className="empty-chat"><h2>{t.startChat}</h2><p>{t.startChatHint}</p></div>}</div></div>
+      </div>
+    </section>}
     {panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}
-  </main>;
-
-  return <main className={`app-shell ${dark ? "theme-dark" : "theme-light"}`} dir={direction}>
-    <div className="app-frame">
-      <aside className={`sidebar ${selected ? "chat-selected" : ""}`}>
-        <div className="side-header"><div className="brand-lockup"><div className="brand-mark small">M</div><div><div className="brand-name">{t.brand}</div><div className="side-me">@{profile?.username || "user"}</div></div></div><div className="top-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" />{totalUnread > 0 && <span className="notification-dot" />}</button><button type="button" className="icon-button" onClick={() => setDark((v) => !v)} aria-label={dark ? "light theme" : "dark theme"}><Icon name={dark ? "sun" : "moon"} /></button></div></div>
-        <button type="button" className="profile-pill" onClick={() => setPanel("profile")}><div className="avatar">{firstLetter(profile?.display_name || profile?.username)}</div><div className="profile-text"><strong>{profile?.display_name || profile?.username}</strong><span>@{profile?.username}</span></div><span className="chevron">›</span></button>
-        <div className="search-wrap"><Icon name="search" /><input value={search} maxLength={50} onChange={(e) => setSearch(e.target.value)} placeholder={t.search} aria-label={t.search} /></div>
-        <div className="section-title"><span>{t.users}</span><span className="count-badge">{users.length}</span></div>
-        <div className="user-list">{filteredUsers.map((user) => <button type="button" className={`user-row ${selected?.id === user.id ? "selected" : ""}`} key={user.id} onClick={() => openChat(user)}><div className="avatar">{firstLetter(user.display_name || user.username)}</div><div className="user-meta"><strong>{user.display_name || user.username}</strong><span>@{user.username}</span></div>{!!unread[user.id] && <span className="unread-badge">{unread[user.id] > 99 ? "99+" : unread[user.id]}</span>}</button>)}{!filteredUsers.length && <div className="empty-list">{t.noUsers}</div>}</div>
-        <div className="side-footer"><button type="button" onClick={() => setPanel("support")}><Icon name="support" />{t.support}</button><button type="button" onClick={() => setPanel("profile")}><Icon name="user" />{t.profile}</button><button type="button" onClick={logout} disabled={busy}><span className="logout-dot" />{t.logout}</button></div>
-      </aside>
-      <section className="chat-panel">{!selected ? <div className="empty-chat"><div className="empty-icon"><span>✦</span></div><h1>{t.startChat}</h1><p>{t.startChatHint}</p></div> : <>
-        <header className="chat-header"><div className="chat-person"><button type="button" className="back-button" onClick={() => setSelected(null)} aria-label={t.back}>‹</button><div className="avatar large">{firstLetter(selected.display_name || selected.username)}</div><div><h2>{selected.display_name || selected.username}</h2><span>@{selected.username}</span></div></div><div className="chat-actions"><button type="button" className="icon-button" onClick={() => setPanel("notifications")} aria-label={t.notifications}><Icon name="bell" /></button></div></header>
-        <div className="messages" aria-live="polite">{!messages.length && <div className="empty-messages"><div className="empty-icon small">✦</div><strong>{t.noMessages}</strong><span>{t.firstMessage}</span></div>}{messages.map((item) => { const mine = item.sender_id === session.user.id; return <div key={item.id} className={`message-line ${mine ? "mine" : "theirs"}`}><div className={`message-bubble ${mine ? "mine" : "theirs"}`}>{item.message_type === "file" ? <button type="button" className="file-message" onClick={() => openFile(item)} title={t.openFile}><Icon name="paperclip" /><span>{item.file_name || t.file}</span></button> : <div className="message-content">{item.content}</div>}<time dateTime={item.created_at}>{formatTime(item.created_at, lang)}</time></div></div>; })}<div ref={endRef} /></div>
-        <div className="composer"><button type="button" className="icon-button attach" onClick={() => fileRef.current?.click()} disabled={busy} aria-label={t.file}><Icon name="paperclip" /></button><input ref={fileRef} type="file" hidden onChange={sendFile} /><textarea value={message} maxLength={MAX_MESSAGE_LENGTH} onChange={(e) => setMessage(e.target.value)} placeholder={t.write} rows={1} aria-label={t.write} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} /><button type="button" className="send-button" onClick={sendMessage} disabled={busy || !message.trim()} aria-label={t.send}><Icon name="send" /></button></div>
-      </>}</section>
-    </div>
-    {error && <div className="toast error" role="alert"><span>{error}</span><div className="toast-actions"><button type="button" onClick={() => setPanel("support")}>{t.supportFromError}</button><button type="button" onClick={() => setError("")} aria-label={t.close}>×</button></div></div>}
-    {success && <div className="toast success" role="status"><span>{success}</span><button type="button" onClick={() => setSuccess("")} aria-label={t.close}>×</button></div>}
-    {panel === "support" && <SupportPanel t={t} onClose={() => setPanel(null)} />}
-    {panel === "notifications" && <Modal title={t.notifications} onClose={() => setPanel(null)} closeLabel={t.close}><div className="notice-card"><Icon name="support" /><div><strong>{t.notificationSupport}</strong><p>{t.notificationSupportText}</p><button type="button" className="modal-button" onClick={() => setPanel("support")}>{t.support}</button></div></div><p className="muted">{totalUnread ? `${totalUnread} ${lang === "fa" ? "پیام خوانده‌نشده" : "unread messages"}` : t.noNotifications}</p></Modal>}
-    {panel === "profile" && <Modal title={t.profile} onClose={() => setPanel(null)} closeLabel={t.close}><div className="profile-modal"><div className="avatar huge">{firstLetter(profile?.display_name || profile?.username)}</div><h3>{profile?.display_name || profile?.username}</h3><span>@{profile?.username}</span>{profile?.contact_value && <div className="contact-chip">{profile.contact_type}: {profile.contact_value}</div>}</div></Modal>}
   </main>;
 }
