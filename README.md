@@ -1,70 +1,94 @@
 # Messenger
 
-A lightweight messaging platform built with Next.js, React, Supabase and Cloudflare Workers.
+A lightweight private messaging platform built with Next.js, React, Supabase and Cloudflare Workers.
 
 ## Stack
 
-- Next.js App Router
+- Next.js App Router with static export
 - React
 - Supabase Auth, Postgres, Realtime and private Storage
-- Cloudflare Workers + OpenNext
-- Node.js 22 for the Workers Builds environment
+- Cloudflare Workers with Wrangler static assets
+- Node.js 22
 
-## Supabase setup
+## Supabase
 
-1. Open the Supabase project.
-2. Go to **SQL Editor → New query**.
-3. Copy all of `supabase/schema.sql` from this repository.
-4. Paste it and click **Run**.
-5. In **Authentication → Providers → Email**, keep **Confirm email disabled**. The app uses an internal username-based email address for Supabase Auth.
+The live database is managed through the SQL files in `supabase/` and the applied migration history. For a fresh project, apply the SQL files in dependency order rather than running only one file:
 
-The SQL enables RLS, creates participant-only message policies, creates the profile trigger, enables Realtime for messages, and creates the private `chat-files` bucket with a 15 MB limit.
+1. `schema.sql`
+2. `identity.sql`
+3. `admin.sql`
+4. `tickets.sql`
+5. `fix-auth.sql` when username-only Auth is required
+6. `hardening.sql`
 
-## Cloudflare Workers Builds
+Verify the resulting database with `verify.sql` and `verify-admin.sql`.
 
-Connect the GitHub repository and use:
+Keep **Confirm email disabled** in Supabase Authentication → Providers → Email because the application uses an internal username-based email address for Auth.
 
+### Security model
+
+- RLS is enabled on application tables.
+- Anonymous database access is revoked for application tables.
+- Users can read only messages where they are sender or receiver.
+- Users can insert messages only as themselves and cannot message themselves.
+- Admin operations are protected by `private.is_admin()` and admin RLS policies.
+- File storage is private and protected by Storage RLS.
+- File paths are stored under the authenticated user's ID.
+- The `chat-files` bucket is limited to 15 MB.
+- Message text is limited to 4,000 characters.
+- The application does not claim end-to-end encryption. TLS/database security is not E2EE.
+
+Use Supabase's Security Advisor and Auth security settings as an additional production check. Leaked Password Protection is a Pro-plan-and-above feature; enable it if the project plan supports it.
+
+## Browser key and secrets
+
+The browser uses the Supabase **publishable** key. Supabase documents publishable keys as safe to expose in browser code when RLS is correctly configured.
+
+Never put a Supabase secret/service-role key in source code, browser code, GitHub, or Cloudflare static assets.
+
+Cloudflare deployment credentials are stored only as GitHub Actions secrets:
+
+- `CLOUDFLARE_API_TOKEN`
+- `CLOUDFLARE_ACCOUNT_ID`
+
+## Cloudflare
+
+The repository is deployed as a static-export Next.js application using Wrangler:
+
+- Worker name: `private-messenger`
 - Production branch: `main`
 - Build command: `npm run build`
 - Deploy command: `npx wrangler deploy`
-- Root directory: `/`
-- Non-production branch deploy command: leave the Cloudflare default
-- Build caching: enabled
+- Output directory: `out`
+- Node.js: 22
 
-The repository includes `.nvmrc` with Node 22. Cloudflare Workers Builds currently defaults to Node 24, while version files can override the build image version. Pinning Node 22 keeps the build environment deterministic for this Next.js/OpenNext project.
+`wrangler.jsonc` explicitly enables the `workers.dev` deployment URL and disables Wrangler preview URLs. The GitHub Actions workflow builds and validates the export once, uploads that exact artifact, then deploys the validated artifact. This avoids rebuilding a different artifact during deployment.
 
-Do **not** add Supabase variables to Cloudflare for this version. The browser client uses the Supabase project URL and a Supabase **publishable** key. A publishable key is designed to be exposed to browser code; RLS is what protects the data.
+## CI checks
 
-Never put a Supabase secret key or service-role key in `app/page.js`, GitHub, or browser code.
+Every push to `main` and pull request runs:
 
-## Security model
-
-- Supabase RLS protects profiles and messages.
-- Users can read only messages where they are sender or receiver.
-- Users can insert messages only as themselves.
-- File storage is private and protected by Storage RLS.
-- File paths are stored under the sender's user ID.
-- Files are limited to 15 MB by the bucket configuration and the client.
-- Message text is limited to 4,000 characters by the client.
-- The application does not claim end-to-end encryption. Supabase/database and transport security are not the same thing as E2EE.
+- dependency installation
+- production build
+- static export validation
+- required output-file checks
+- Cloudflare `wrangler deploy --dry-run`
+- validated build-artifact upload
+- exact artifact verification before deployment
+- Cloudflare deployment on `main`
 
 ## Support
 
-The application includes an in-app support panel and an error-state support action for:
+The application includes in-app support and a support ticket system.
 
-- Telegram: `https://t.me/parhamsoleimanybot`
+- Telegram support: `https://t.me/parhamsoleimanybot`
 - Utino support: `https://utino.org/chat/supportusername`
 - iParham: `https://iparham.com`
 - WDNER: `https://wdner.co`
 - Utino: `https://utino.org`
 
-Support username: `parham`
-Support display name: `Parham Soleimany`
-
-## Deployment flow
-
-Workers Builds runs the build command first and then the deploy command. The repository's `build` script creates the OpenNext output; `npx wrangler deploy` publishes that already-built Worker. This avoids building the application a second time during the deploy step.
-
 ## Important
 
-If a Cloudflare build stays in **Initializing**, **Cloning**, or **Installing dependencies** for an unusually long time, that is a Workers Builds/environment problem rather than a Supabase runtime secret problem. Check the build log for the exact phase before changing application code.
+The public interface is login-only. Account creation is handled through support rather than public signup.
+
+The application is designed to be protected by Supabase RLS and authenticated sessions. Do not treat the public Supabase publishable key as a secret, and do not add elevated Supabase credentials to the frontend.
