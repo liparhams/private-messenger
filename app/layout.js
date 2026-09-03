@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Private Messenger",
-  description: "پیام‌رسان خصوصی"
+  title: "Messenger",
+  description: "Messenger platform"
 };
 
 export default function RootLayout({ children }) {
