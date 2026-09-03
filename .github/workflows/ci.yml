@@ -27,7 +27,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --prefer-offline
 
       - name: Production build
         run: npm run build
@@ -35,13 +35,23 @@ jobs:
       - name: Verify static export
         shell: bash
         run: |
+          set -euo pipefail
           test -f out/index.html
-          test -d out/_next
+          test -f out/404.html
           test -d out/_next/static
           grep -q "Messenger" out/index.html
+          test "$(find out -type f | wc -l)" -gt 10
 
       - name: Validate Cloudflare deployment package
         run: npx wrangler deploy --dry-run
+
+      - name: Upload validated build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: messenger-static-export
+          path: out
+          if-no-files-found: error
+          retention-days: 3
 
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
@@ -58,12 +68,24 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --prefer-offline
 
-      - name: Production build
-        run: npm run build
+      - name: Download validated build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: messenger-static-export
+          path: out
 
-      - name: Deploy to Cloudflare Workers
+      - name: Verify deployment artifact
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f out/index.html
+          test -f out/404.html
+          test -d out/_next/static
+          grep -q "Messenger" out/index.html
+
+      - name: Deploy exact validated artifact to Cloudflare Workers
         run: npx wrangler deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
