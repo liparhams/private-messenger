@@ -1,0 +1,31 @@
+-- Support tickets / ticket IDs
+create table if not exists public.support_tickets (
+  id uuid primary key default gen_random_uuid(),
+  ticket_no bigint generated always as identity unique,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  subject text not null check (char_length(subject) between 1 and 160),
+  status text not null default 'open' check (status in ('open','pending','closed')),
+  priority text not null default 'normal' check (priority in ('low','normal','high','urgent')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create table if not exists public.support_messages (
+  id uuid primary key default gen_random_uuid(),
+  ticket_id uuid not null references public.support_tickets(id) on delete cascade,
+  sender_id uuid not null references auth.users(id) on delete cascade,
+  content text not null check (char_length(content) between 1 and 4000),
+  created_at timestamptz not null default now()
+);
+create index if not exists support_tickets_user_idx on public.support_tickets(user_id,updated_at desc);
+create index if not exists support_messages_ticket_idx on public.support_messages(ticket_id,created_at);
+alter table public.support_tickets enable row level security;
+alter table public.support_messages enable row level security;
+revoke all on public.support_tickets from anon;
+revoke all on public.support_messages from anon;
+grant select,insert,update on public.support_tickets to authenticated;
+grant select,insert on public.support_messages to authenticated;
+create policy "users and staff can read tickets" on public.support_tickets for select to authenticated using (user_id=auth.uid() or public.is_admin());
+create policy "users can create tickets" on public.support_tickets for insert to authenticated with check (user_id=auth.uid());
+create policy "staff can update tickets" on public.support_tickets for update to authenticated using (public.is_admin()) with check (public.is_admin());
+create policy "ticket participants can read messages" on public.support_messages for select to authenticated using (sender_id=auth.uid() or exists(select 1 from public.support_tickets t where t.id=ticket_id and (t.user_id=auth.uid() or public.is_admin())));
+create policy "ticket participants can send messages" on public.support_messages for insert to authenticated with check (sender_id=auth.uid() and exists(select 1 from public.support_tickets t where t.id=ticket_id and (t.user_id=auth.uid() or public.is_admin())));
