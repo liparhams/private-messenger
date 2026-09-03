@@ -11,6 +11,8 @@ const nextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "X-DNS-Prefetch-Control", value: "off" },
+          { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
           {
             key: "Permissions-Policy",
             value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
@@ -27,10 +29,10 @@ const nextConfig = {
               "form-action 'self'",
               "frame-ancestors 'none'",
               "object-src 'none'",
-              "img-src 'self' data: blob: https:",
-              "font-src 'self' data: https:",
+              "img-src 'self' data: blob: https://*.supabase.co",
+              "font-src 'self' data:",
               "style-src 'self' 'unsafe-inline'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "script-src 'self' 'unsafe-inline'",
               "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
               "media-src 'self' blob:",
               "worker-src 'self' blob:"
