@@ -5,6 +5,11 @@ create index if not exists support_messages_ticket_idx on public.support_message
 alter table public.support_tickets enable row level security; alter table public.support_messages enable row level security;
 revoke all on public.support_tickets from anon; revoke all on public.support_messages from anon;
 grant select,insert,update on public.support_tickets to authenticated; grant select,insert on public.support_messages to authenticated;
+drop policy if exists "users and staff can read tickets" on public.support_tickets;
+drop policy if exists "users can create tickets" on public.support_tickets;
+drop policy if exists "staff can update tickets" on public.support_tickets;
+drop policy if exists "ticket participants can read messages" on public.support_messages;
+drop policy if exists "ticket participants can send messages" on public.support_messages;
 create policy "users and staff can read tickets" on public.support_tickets for select to authenticated using(user_id=auth.uid() or public.is_admin());
 create policy "users can create tickets" on public.support_tickets for insert to authenticated with check(user_id=auth.uid());
 create policy "staff can update tickets" on public.support_tickets for update to authenticated using(public.is_admin()) with check(public.is_admin());
