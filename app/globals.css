@@ -1,6 +1,9 @@
 @import "./messenger.css";
 
-/* Global reset kept separate so the modern messenger theme can evolve without legacy styles leaking into the UI. */
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; min-height: 100%; }
 body { min-height: 100vh; }
+.registration-note { margin-top: 14px; padding: 12px 14px; border: 1px solid var(--border); background: var(--soft); border-radius: 14px; display: grid; gap: 4px; text-align: center; }
+.registration-note strong { font-size: 12px; color: var(--text); }
+.registration-note span { font-size: 11px; color: var(--muted); line-height: 1.6; }
+.verified-badge { display: inline-grid; place-items: center; width: 16px; height: 16px; margin-inline-start: 5px; border-radius: 50%; background: #3b82f6; color: #fff; font-size: 10px; font-weight: 900; vertical-align: middle; }
