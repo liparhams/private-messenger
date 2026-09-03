@@ -3,20 +3,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
 
-const SUPABASE_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://jcblfgrcsgbdeamogzfc.supabase.co";
+const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
 
-const SUPABASE_PUBLISHABLE_KEY =
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
-
-const supabase = createClient(
-  SUPABASE_URL,
-  SUPABASE_PUBLISHABLE_KEY
-);
-
-const AUTH_EMAIL_DOMAIN = "messenger.local";
+const supabase =
+  SUPABASE_URL && SUPABASE_PUBLISHABLE_KEY
+    ? createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY)
+    : null;
 
 const translations = {
   fa: {
@@ -48,12 +41,12 @@ const translations = {
     wait: "لطفاً صبر کن...",
     userPassRequired: "نام کاربری و رمز عبور را وارد کن.",
     registerRequired: "نام کاربری، نام نمایشی و رمز عبور الزامی هستند.",
-    usernameInvalid:
-      "نام کاربری باید ۳ تا ۲۰ کاراکتر و شامل حروف انگلیسی، عدد یا _ باشد.",
+    usernameInvalid: "نام کاربری باید ۳ تا ۲۰ کاراکتر و شامل حروف انگلیسی، عدد یا _ باشد.",
     passwordInvalid: "رمز عبور باید حداقل ۶ کاراکتر باشد.",
     profileCreated: "حساب با موفقیت ساخته شد.",
     loginSuccess: "ورود با موفقیت انجام شد.",
     serverError: "برقراری ارتباط با سرور انجام نشد.",
+    configError: "تنظیمات اتصال پیام‌رسان کامل نیست. متغیرهای Supabase را در Cloudflare بررسی کن.",
     accountCreationFailed: "ساخت حساب انجام نشد.",
     invalidLogin: "نام کاربری یا رمز عبور اشتباه است.",
     alreadyRegistered: "این نام کاربری قبلاً ثبت شده است.",
@@ -109,12 +102,12 @@ const translations = {
     wait: "Please wait...",
     userPassRequired: "Enter your username and password.",
     registerRequired: "Username, display name and password are required.",
-    usernameInvalid:
-      "Username must be 3–20 characters and use English letters, numbers or _.",
+    usernameInvalid: "Username must be 3–20 characters and use English letters, numbers or _.",
     passwordInvalid: "Password must be at least 6 characters.",
     profileCreated: "Your account was created successfully.",
     loginSuccess: "Signed in successfully.",
     serverError: "Could not connect to the server.",
+    configError: "Supabase configuration is incomplete. Check the Cloudflare variables.",
     accountCreationFailed: "Account creation failed.",
     invalidLogin: "Incorrect username or password.",
     alreadyRegistered: "This username is already registered.",
@@ -144,7 +137,7 @@ const translations = {
 };
 
 function usernameToEmail(username) {
-  return `${username.toLowerCase()}@${AUTH_EMAIL_DOMAIN}`;
+  return `${username.toLowerCase()}@messenger.local`;
 }
 
 function formatTime(value, lang) {
@@ -161,32 +154,10 @@ function formatTime(value, lang) {
 
 function mapAuthError(error, t) {
   const message = String(error?.message || "").toLowerCase();
-
-  if (
-    message.includes("already registered") ||
-    message.includes("already exists") ||
-    message.includes("user already registered")
-  ) {
-    return t.alreadyRegistered;
-  }
-
-  if (
-    message.includes("password") &&
-    (message.includes("6") ||
-      message.includes("8") ||
-      message.includes("characters"))
-  ) {
-    return t.passwordInvalid;
-  }
-
-  if (message.includes("invalid login credentials")) {
-    return t.invalidLogin;
-  }
-
-  if (message.includes("email not confirmed")) {
-    return t.emailNotConfirmed;
-  }
-
+  if (message.includes("already registered") || message.includes("already exists") || message.includes("user already registered")) return t.alreadyRegistered;
+  if (message.includes("password") && (message.includes("6") || message.includes("8") || message.includes("characters"))) return t.passwordInvalid;
+  if (message.includes("invalid login credentials")) return t.invalidLogin;
+  if (message.includes("email not confirmed")) return t.emailNotConfirmed;
   return error?.message || t.accountCreationFailed;
 }
 
@@ -217,14 +188,39 @@ export default function Home() {
   const fileInputRef = useRef(null);
   const t = translations[lang];
 
+  async function loadProfile(userId) {
+    if (!supabase || !userId) return null;
+    const { data, error: profileError } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+    if (profileError) {
+      console.error(profileError);
+      setError(profileError.message);
+      return null;
+    }
+    setProfile(data || null);
+    return data || null;
+  }
+
+  async function loadUsers(userId) {
+    if (!supabase || !userId) return;
+    const { data, error: usersError } = await supabase
+      .from("profiles")
+      .select("id, username, display_name, contact_type, contact_value, created_at")
+      .neq("id", userId)
+      .order("username", { ascending: true });
+    if (usersError) {
+      console.error(usersError);
+      setError(usersError.message);
+      return;
+    }
+    setUsers(data || []);
+  }
+
   useEffect(() => {
     try {
       const savedLang = localStorage.getItem("messenger-language");
       const savedTheme = localStorage.getItem("messenger-theme");
       if (savedLang === "fa" || savedLang === "en") setLang(savedLang);
-      if (savedTheme === "light" || savedTheme === "dark") {
-        setDarkMode(savedTheme === "dark");
-      }
+      if (savedTheme === "light" || savedTheme === "dark") setDarkMode(savedTheme === "dark");
     } catch {}
   }, []);
 
@@ -239,21 +235,24 @@ export default function Home() {
     let mounted = true;
 
     async function init() {
+      if (!supabase) {
+        setError(t.configError);
+        setLoading(false);
+        return;
+      }
       try {
-        const {
-          data: { session: currentSession },
-        } = await supabase.auth.getSession();
-
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
         if (!mounted) return;
+        const currentSession = data?.session || null;
         setSession(currentSession);
-
         if (currentSession?.user) {
           await loadProfile(currentSession.user.id);
           await loadUsers(currentSession.user.id);
         }
       } catch (err) {
-        console.error(err);
-        setError(t.serverError);
+        console.error("Messenger init error", err);
+        if (mounted) setError(mapAuthError(err, t));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -261,86 +260,52 @@ export default function Home() {
 
     init();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
-      if (!mounted) return;
-      setSession(newSession);
+    if (!supabase) return () => { mounted = false; };
 
-      if (newSession?.user) {
-        await loadProfile(newSession.user.id);
-        await loadUsers(newSession.user.id);
-      } else {
+    const { data } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (!mounted) return;
+      setSession(newSession || null);
+
+      if (!newSession?.user) {
         setProfile(null);
         setUsers([]);
         setSelectedUser(null);
         setMessages([]);
+        setLoading(false);
+        return;
       }
 
-      setLoading(false);
+      window.setTimeout(async () => {
+        if (!mounted) return;
+        await loadProfile(newSession.user.id);
+        await loadUsers(newSession.user.id);
+        if (mounted) setLoading(false);
+      }, 0);
     });
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      data?.subscription?.unsubscribe();
     };
   }, []);
-
-  async function loadProfile(userId) {
-    const { data, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
-
-    if (profileError) {
-      console.error(profileError);
-      return;
-    }
-
-    setProfile(data);
-  }
-
-  async function loadUsers(userId) {
-    const { data, error: usersError } = await supabase
-      .from("profiles")
-      .select("id, username, display_name, contact_type, contact_value, created_at")
-      .neq("id", userId)
-      .order("username", { ascending: true });
-
-    if (usersError) {
-      console.error(usersError);
-      setError(usersError.message);
-      return;
-    }
-
-    setUsers(data || []);
-  }
 
   const filteredUsers = useMemo(() => {
     const value = search.trim().toLowerCase();
     if (!value) return users;
-    return users.filter((user) =>
-      [user.username, user.display_name]
-        .filter(Boolean)
-        .some((item) => item.toLowerCase().includes(value))
-    );
+    return users.filter((user) => [user.username, user.display_name].filter(Boolean).some((item) => String(item).toLowerCase().includes(value)));
   }, [users, search]);
 
   async function loadMessages(otherUser) {
-    if (!session?.user || !otherUser) return;
+    if (!supabase || !session?.user || !otherUser) return;
     setSelectedUser(otherUser);
     setError("");
 
     const myId = session.user.id;
     const otherId = otherUser.id;
-
     const { data, error: messagesError } = await supabase
       .from("messages")
       .select("*")
-      .or(
-        `and(sender_id.eq.${myId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${myId})`
-      )
+      .or(`and(sender_id.eq.${myId},receiver_id.eq.${otherId}),and(sender_id.eq.${otherId},receiver_id.eq.${myId})`)
       .order("created_at", { ascending: true });
 
     if (messagesError) {
@@ -348,47 +313,31 @@ export default function Home() {
       setError(messagesError.message);
       return;
     }
-
     setMessages(data || []);
   }
 
   useEffect(() => {
-    if (!session?.user) return;
+    if (!supabase || !session?.user?.id) return undefined;
 
     const channel = supabase
       .channel(`messages-${session.user.id}`)
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
-        (payload) => {
-          const message = payload.new;
-          const belongsToSelected =
-            selectedUser &&
-            ((message.sender_id === session.user.id &&
-              message.receiver_id === selectedUser.id) ||
-              (message.sender_id === selectedUser.id &&
-                message.receiver_id === session.user.id));
-
-          if (belongsToSelected) {
-            setMessages((current) =>
-              current.some((item) => item.id === message.id)
-                ? current
-                : [...current, message]
-            );
-          }
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "messages" },
-        (payload) => {
-          const updated = payload.new;
-          setMessages((current) =>
-            current.map((item) => (item.id === updated.id ? updated : item))
-          );
-        }
-      )
-      .subscribe();
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" }, (payload) => {
+        const message = payload?.new;
+        if (!message) return;
+        setMessages((current) => {
+          const belongsToSelected = selectedUser && ((message.sender_id === session.user.id && message.receiver_id === selectedUser.id) || (message.sender_id === selectedUser.id && message.receiver_id === session.user.id));
+          if (!belongsToSelected || current.some((item) => item.id === message.id)) return current;
+          return [...current, message];
+        });
+      })
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "messages" }, (payload) => {
+        const updated = payload?.new;
+        if (!updated) return;
+        setMessages((current) => current.map((item) => (item.id === updated.id ? updated : item)));
+      })
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") console.error("Supabase realtime channel error");
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -396,30 +345,28 @@ export default function Home() {
   }, [session?.user?.id, selectedUser?.id]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    try {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    } catch {}
   }, [messages]);
 
   async function login() {
     setError("");
     setSuccess("");
     const cleanUsername = username.trim().toLowerCase();
-
-    if (!cleanUsername || !password) {
-      setError(t.userPassRequired);
-      return;
-    }
+    if (!supabase) return setError(t.configError);
+    if (!cleanUsername || !password) return setError(t.userPassRequired);
+    if (!/^[a-z0-9_]{3,20}$/.test(cleanUsername)) return setError(t.usernameInvalid);
+    if (password.length < 6) return setError(t.passwordInvalid);
 
     setBusy(true);
-
     try {
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: usernameToEmail(cleanUsername),
-        password,
-      });
-
-      if (loginError) throw loginError;
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email: usernameToEmail(cleanUsername), password });
+      if (authError) throw authError;
+      if (!data?.session) throw new Error(t.invalidLogin);
       setSuccess(t.loginSuccess);
     } catch (err) {
+      console.error("Login error", err);
       setError(mapAuthError(err, t));
     } finally {
       setBusy(false);
@@ -429,60 +376,42 @@ export default function Home() {
   async function register() {
     setError("");
     setSuccess("");
-
     const cleanUsername = username.trim().toLowerCase();
     const cleanDisplayName = displayName.trim();
-    const cleanContact = contactValue.trim();
-
-    if (!cleanUsername || !password || !cleanDisplayName) {
-      setError(t.registerRequired);
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_]{3,20}$/.test(cleanUsername)) {
-      setError(t.usernameInvalid);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError(t.passwordInvalid);
-      return;
-    }
+    if (!supabase) return setError(t.configError);
+    if (!cleanUsername || !cleanDisplayName || !password) return setError(t.registerRequired);
+    if (!/^[a-z0-9_]{3,20}$/.test(cleanUsername)) return setError(t.usernameInvalid);
+    if (password.length < 6) return setError(t.passwordInvalid);
 
     setBusy(true);
-
     try {
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      const { data, error: authError } = await supabase.auth.signUp({
         email: usernameToEmail(cleanUsername),
         password,
+        options: { data: { username: cleanUsername, display_name: cleanDisplayName } },
       });
+      if (authError) throw authError;
+      if (!data?.user) throw new Error(t.accountCreationFailed);
 
-      if (signUpError) throw signUpError;
-      if (!data.user) throw new Error(t.accountCreationFailed);
+      const profilePayload = {
+        id: data.user.id,
+        username: cleanUsername,
+        display_name: cleanDisplayName,
+        contact_type: contactType || null,
+        contact_value: contactValue.trim() || null,
+      };
 
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .insert({
-          id: data.user.id,
-          username: cleanUsername,
-          display_name: cleanDisplayName,
-          contact_type: contactType,
-          contact_value: cleanContact || null,
-        })
-        .select()
-        .single();
+      const { error: profileError } = await supabase.from("profiles").upsert(profilePayload, { onConflict: "id" });
+      if (profileError) {
+        console.error("Profile create error", profileError);
+        throw profileError;
+      }
 
-      if (profileError) throw profileError;
-
-      setProfile(profileData);
       setSuccess(t.profileCreated);
       setMode("login");
-      setUsername("");
       setPassword("");
-      setDisplayName("");
-      setContactValue("");
     } catch (err) {
-      console.error(err);
+      console.error("Registration error", err);
       setError(mapAuthError(err, t));
     } finally {
       setBusy(false);
@@ -491,810 +420,225 @@ export default function Home() {
 
   async function sendMessage() {
     const text = messageText.trim();
-    if (!text || !session?.user || !selectedUser) return;
-
-    setBusy(true);
+    if (!supabase || !session?.user || !selectedUser || !text) return;
     setError("");
-
+    setBusy(true);
     try {
-      const { data, error: sendError } = await supabase
-        .from("messages")
-        .insert({
-          sender_id: session.user.id,
-          receiver_id: selectedUser.id,
-          content: text,
-        })
-        .select()
-        .single();
-
-      if (sendError) throw sendError;
-
-      setMessages((current) =>
-        current.some((item) => item.id === data.id)
-          ? current
-          : [...current, data]
-      );
+      const { data, error: messageError } = await supabase.from("messages").insert({ sender_id: session.user.id, receiver_id: selectedUser.id, content: text, message_type: "text" }).select().single();
+      if (messageError) throw messageError;
+      setMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data]);
       setMessageText("");
     } catch (err) {
-      console.error(err);
-      setError(err.message || t.sendFailed);
+      console.error("Send message error", err);
+      setError(err?.message || t.sendFailed);
     } finally {
       setBusy(false);
     }
   }
 
-  function handleMessageKeyDown(event) {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      sendMessage();
-    }
-  }
-
   async function uploadFile(event) {
     const file = event.target.files?.[0];
-    if (!file || !session?.user || !selectedUser) return;
-
+    event.target.value = "";
+    if (!supabase || !session?.user || !selectedUser || !file) return;
     setSendingFile(true);
     setError("");
-
     try {
-      const extension = file.name.includes(".")
-        ? file.name.split(".").pop()
-        : "bin";
-
-      const path = `${session.user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from("chat-files")
-        .upload(path, file, { cacheControl: "3600", upsert: false });
-
+      const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+      const path = `${session.user.id}/${Date.now()}-${safeName}`;
+      const { error: uploadError } = await supabase.storage.from("chat-files").upload(path, file, { upsert: false });
       if (uploadError) throw uploadError;
 
-      const { data: publicData } = supabase.storage
-        .from("chat-files")
-        .getPublicUrl(path);
-
-      const { data: message, error: messageError } = await supabase
-        .from("messages")
-        .insert({
-          sender_id: session.user.id,
-          receiver_id: selectedUser.id,
-          content: file.name,
-          file_url: publicData.publicUrl,
-          file_type: file.type || "application/octet-stream",
-        })
-        .select()
-        .single();
-
+      const { data: publicUrlData } = supabase.storage.from("chat-files").getPublicUrl(path);
+      const { data, error: messageError } = await supabase.from("messages").insert({
+        sender_id: session.user.id,
+        receiver_id: selectedUser.id,
+        content: publicUrlData.publicUrl,
+        message_type: "file",
+        file_name: file.name,
+      }).select().single();
       if (messageError) throw messageError;
-
-      setMessages((current) =>
-        current.some((item) => item.id === message.id)
-          ? current
-          : [...current, message]
-      );
-
-      if (fileInputRef.current) fileInputRef.current.value = "";
+      setMessages((current) => current.some((item) => item.id === data.id) ? current : [...current, data]);
     } catch (err) {
-      console.error(err);
-      setError(err.message || t.uploadFailed);
+      console.error("Upload error", err);
+      setError(err?.message || t.uploadFailed);
     } finally {
       setSendingFile(false);
     }
   }
 
-  async function toggleReaction(message) {
-    if (!session?.user) return;
-
-    const currentReactions =
-      message.reactions && typeof message.reactions === "object"
-        ? message.reactions
-        : {};
-
-    const currentCount = Number(currentReactions.heart || 0);
-    const nextReactions = {
-      ...currentReactions,
-      heart: currentCount > 0 ? 0 : 1,
-    };
-
-    const { data, error: reactionError } = await supabase
-      .from("messages")
-      .update({ reactions: nextReactions })
-      .eq("id", message.id)
-      .select()
-      .single();
-
-    if (reactionError) {
-      console.error(reactionError);
-      setError(reactionError.message);
-      return;
-    }
-
-    setMessages((current) =>
-      current.map((item) => (item.id === data.id ? data : item))
-    );
-  }
-
   async function logout() {
+    if (!supabase) return;
     await supabase.auth.signOut();
-    setSession(null);
-    setProfile(null);
-    setUsers([]);
-    setSelectedUser(null);
-    setMessages([]);
-  }
-
-  function switchMode(nextMode) {
-    setMode(nextMode);
-    setError("");
-    setSuccess("");
   }
 
   function toggleLanguage() {
     setLang((current) => (current === "fa" ? "en" : "fa"));
-    setError("");
-    setSuccess("");
   }
 
+  function toggleTheme() {
+    setDarkMode((current) => !current);
+  }
+
+  const pageStyle = {
+    minHeight: "100vh",
+    background: darkMode ? "#09090b" : "#f4f4f5",
+    color: darkMode ? "#f4f4f5" : "#18181b",
+    padding: 24,
+    fontFamily: "Arial, sans-serif",
+    boxSizing: "border-box",
+  };
+
+  const cardStyle = {
+    background: darkMode ? "#18181b" : "#ffffff",
+    border: `1px solid ${darkMode ? "#27272a" : "#e4e4e7"}`,
+    borderRadius: 18,
+    boxShadow: darkMode ? "0 18px 60px rgba(0,0,0,.28)" : "0 18px 60px rgba(24,24,27,.08)",
+  };
+
   if (loading) {
-    return (
-      <main className="screen">
-        <div className="loader-card">
-          <div className="spinner" />
-          <div>{t.loading}</div>
-        </div>
-        <style jsx global>{styles}</style>
-      </main>
-    );
+    return <main style={{ ...pageStyle, display: "grid", placeItems: "center" }}><div style={{ ...cardStyle, padding: 32, textAlign: "center" }}>{t.loading}</div></main>;
   }
 
   if (!session) {
     return (
-      <main
-        className={`auth-screen ${darkMode ? "dark" : "light"}`}
-        dir={lang === "fa" ? "rtl" : "ltr"}
-      >
-        <div className="auth-background" />
-
-        <section className="auth-card">
-          <div className="top-bar">
-            <button className="language-button" onClick={toggleLanguage}>
-              {t.language}
-            </button>
-            <button
-              className="theme-button"
-              onClick={() => setDarkMode((current) => !current)}
-              title={darkMode ? t.light : t.dark}
-            >
-              {darkMode ? "☀" : "☾"}
-            </button>
-          </div>
-
-          <div className="brand">
-            <div className="brand-icon">✦</div>
-            <div>
-              <h1>{t.brand}</h1>
-              <p>{t.subtitle}</p>
+      <main dir={lang === "fa" ? "rtl" : "ltr"} style={{ ...pageStyle, display: "grid", placeItems: "center" }}>
+        <div style={{ ...cardStyle, width: "min(460px, 100%)", padding: 28 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, marginBottom: 24 }}>
+            <div><div style={{ fontSize: 28, fontWeight: 800 }}>{t.brand}</div><div style={{ opacity: .65, marginTop: 4 }}>{t.subtitle}</div></div>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={toggleLanguage} style={{ border: 0, borderRadius: 10, padding: "8px 10px", cursor: "pointer" }}>{t.language}</button>
+              <button onClick={toggleTheme} style={{ border: 0, borderRadius: 10, padding: "8px 10px", cursor: "pointer" }}>{darkMode ? "☀" : "☾"}</button>
             </div>
           </div>
 
-          <div className="mode-switch">
-            <button
-              className={mode === "login" ? "active" : ""}
-              onClick={() => switchMode("login")}
-            >
-              {t.login}
-            </button>
-            <button
-              className={mode === "register" ? "active" : ""}
-              onClick={() => switchMode("register")}
-            >
-              {t.register}
-            </button>
+          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
+            {["login", "register"].map((item) => <button key={item} onClick={() => { setMode(item); setError(""); setSuccess(""); }} style={{ flex: 1, padding: "11px 12px", borderRadius: 12, border: "1px solid #3f3f46", cursor: "pointer", background: mode === item ? "#27272a" : "transparent", color: "inherit" }}>{t[item]}</button>)}
           </div>
 
-          <div className="form">
-            <label>{t.username}</label>
-            <input
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder={t.usernamePlaceholder}
-              autoComplete="username"
-              inputMode="text"
-              dir="ltr"
-            />
+          {mode === "register" && <input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder={t.displayNamePlaceholder} style={inputStyle} />}
+          <input value={username} onChange={(e) => setUsername(e.target.value)} placeholder={t.usernamePlaceholder} autoComplete="username" style={inputStyle} />
+          <input value={password} onChange={(e) => setPassword(e.target.value)} placeholder={t.passwordPlaceholder} type="password" autoComplete={mode === "login" ? "current-password" : "new-password"} onKeyDown={(e) => { if (e.key === "Enter") mode === "login" ? login() : register(); }} style={inputStyle} />
 
-            {mode === "register" && (
-              <>
-                <label>{t.displayName}</label>
-                <input
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder={t.displayNamePlaceholder}
-                  autoComplete="name"
-                />
+          {mode === "register" && <>
+            <select value={contactType} onChange={(e) => setContactType(e.target.value)} style={inputStyle}>
+              <option value="telegram">{t.contactTelegram}</option>
+              <option value="instagram">{t.contactInstagram}</option>
+              <option value="email">{t.contactEmail}</option>
+              <option value="phone">{t.contactPhone}</option>
+              <option value="other">{t.contactOther}</option>
+            </select>
+            <input value={contactValue} onChange={(e) => setContactValue(e.target.value)} placeholder={`${t.contactValue} (${t.optional})`} style={inputStyle} />
+          </>}
 
-                <div className="field-heading">
-                  <label>{t.contactMethod}</label>
-                  <span>{t.optional}</span>
-                </div>
-                <select
-                  value={contactType}
-                  onChange={(e) => setContactType(e.target.value)}
-                >
-                  <option value="telegram">{t.contactTelegram}</option>
-                  <option value="instagram">{t.contactInstagram}</option>
-                  <option value="email">{t.contactEmail}</option>
-                  <option value="phone">{t.contactPhone}</option>
-                  <option value="other">{t.contactOther}</option>
-                </select>
+          {error && <div style={noticeError}>{error}</div>}
+          {success && <div style={noticeSuccess}>{success}</div>}
 
-                <div className="field-heading">
-                  <label>{t.contactValue}</label>
-                  <span>{t.optional}</span>
-                </div>
-                <input
-                  value={contactValue}
-                  onChange={(e) => setContactValue(e.target.value)}
-                  placeholder={t.contactPlaceholder}
-                  dir="auto"
-                />
-              </>
-            )}
+          <button disabled={busy} onClick={mode === "login" ? login : register} style={primaryButton}>{busy ? t.wait : mode === "login" ? t.loginButton : t.registerButton}</button>
+          <button onClick={() => setShowSupport(true)} style={{ ...secondaryButton, marginTop: 10 }}>{t.support}</button>
+        </div>
 
-            <label>{t.password}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder={t.passwordPlaceholder}
-              autoComplete={mode === "login" ? "current-password" : "new-password"}
-              dir="ltr"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  if (mode === "login") login();
-                  else register();
-                }
-              }}
-            />
-
-            {error && <div className="alert error">{error}</div>}
-            {success && <div className="alert success">{success}</div>}
-
-            <button
-              className="primary-button"
-              disabled={busy}
-              onClick={mode === "login" ? login : register}
-            >
-              {busy ? t.wait : mode === "login" ? t.loginButton : t.registerButton}
-            </button>
-          </div>
-        </section>
-
-        <style jsx global>{styles}</style>
+        {showSupport && <Modal title={t.support} onClose={() => setShowSupport(false)} darkMode={darkMode}>
+          <p>{t.supportDesc}</p>
+          <a href="https://t.me/parhamsoleimanybot" target="_blank" rel="noreferrer" style={linkStyle}>{t.supportTelegram}</a>
+          <a href="https://utino.org/chat/supportusername" target="_blank" rel="noreferrer" style={linkStyle}>{t.supportUtino}</a>
+          <a href="https://wdner.co" target="_blank" rel="noreferrer" style={linkStyle}>WDNER</a>
+          <a href="https://iparham.com" target="_blank" rel="noreferrer" style={linkStyle}>iParham</a>
+        </Modal>}
       </main>
     );
   }
 
   return (
-    <main
-      className={`app ${darkMode ? "dark" : "light"}`}
-      dir={lang === "fa" ? "rtl" : "ltr"}
-    >
-      <aside className="sidebar">
-        <div className="sidebar-top">
-          <div className="brand small">
-            <div className="brand-icon">✦</div>
-            <div>
-              <h1>{t.brand}</h1>
-              <span>{t.privateChat}</span>
-            </div>
+    <main dir={lang === "fa" ? "rtl" : "ltr"} style={pageStyle}>
+      <div style={{ maxWidth: 1200, margin: "0 auto", display: "grid", gridTemplateColumns: "320px 1fr", gap: 18 }}>
+        <aside style={{ ...cardStyle, padding: 18, minHeight: "calc(100vh - 48px)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", marginBottom: 18 }}>
+            <div><strong>{profile?.display_name || profile?.username || "Messenger"}</strong><div style={{ opacity: .55, fontSize: 13 }}>{profile?.username ? `@${profile.username}` : ""}</div></div>
+            <div style={{ display: "flex", gap: 6 }}><button onClick={toggleLanguage} style={smallButton}>{t.language}</button><button onClick={toggleTheme} style={smallButton}>{darkMode ? "☀" : "☾"}</button></div>
           </div>
-
-          <div className="top-actions">
-            <button title={lang === "fa" ? "English" : "فارسی"} onClick={toggleLanguage}>
-              {t.language}
-            </button>
-            <button title={darkMode ? t.light : t.dark} onClick={() => setDarkMode((current) => !current)}>
-              {darkMode ? "☀" : "☾"}
-            </button>
-            <button title={t.support} onClick={() => setShowSupport(true)}>
-              ?
-            </button>
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={t.searchUser} style={inputStyle} />
+          <button onClick={() => setShowSupport(true)} style={{ ...secondaryButton, marginBottom: 12 }}>{t.support}</button>
+          <div style={{ opacity: .55, fontSize: 13, marginBottom: 8 }}>{t.users}</div>
+          <div>
+            {filteredUsers.map((user) => <button key={user.id} onClick={() => loadMessages(user)} style={{ width: "100%", textAlign: lang === "fa" ? "right" : "left", padding: 12, borderRadius: 12, border: 0, marginBottom: 6, background: selectedUser?.id === user.id ? (darkMode ? "#27272a" : "#e4e4e7") : "transparent", color: "inherit", cursor: "pointer" }}><div style={{ fontWeight: 700 }}>{user.display_name || user.username}</div><div style={{ opacity: .55, fontSize: 12 }}>@{user.username}</div></button>)}
+            {!filteredUsers.length && <div style={{ opacity: .55, padding: 12 }}>{t.noUser}</div>}
           </div>
-        </div>
-
-        <button className="me-card" onClick={() => setShowProfile(true)}>
-          <div className="avatar">
-            {(profile?.display_name || profile?.username || "?").charAt(0).toUpperCase()}
+          <div style={{ marginTop: "auto", paddingTop: 18, display: "grid", gap: 8 }}>
+            <button onClick={() => setShowProfile(true)} style={secondaryButton}>{t.profile}</button>
+            <button onClick={logout} style={secondaryButton}>{t.logout}</button>
           </div>
-          <div className="me-info">
-            <strong>{profile?.display_name || profile?.username}</strong>
-            <span>@{profile?.username}</span>
-          </div>
-          <span className="more-button">⋮</span>
-        </button>
+        </aside>
 
-        <div className="search-box">
-          <span>⌕</span>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder={t.searchUser}
-          />
-        </div>
-
-        <div className="users-title">
-          <span>{t.users}</span>
-          <span>{filteredUsers.length}</span>
-        </div>
-
-        <div className="users-list">
-          {filteredUsers.length === 0 ? (
-            <div className="empty-users">{t.noUser}</div>
-          ) : (
-            filteredUsers.map((user) => (
-              <button
-                key={user.id}
-                className={`user-item ${selectedUser?.id === user.id ? "selected" : ""}`}
-                onClick={() => loadMessages(user)}
-              >
-                <div className="avatar">
-                  {(user.display_name || user.username || "?").charAt(0).toUpperCase()}
-                </div>
-                <div className="user-text">
-                  <strong>{user.display_name}</strong>
-                  <span>@{user.username}</span>
-                </div>
-              </button>
-            ))
-          )}
-        </div>
-
-        <div className="sidebar-bottom">
-          <button onClick={() => setShowSupport(true)}>
-            <span>◉</span>
-            {t.support}
-          </button>
-          <button onClick={logout}>
-            <span>↪</span>
-            {t.logout}
-          </button>
-        </div>
-      </aside>
-
-      <section className="chat">
-        {!selectedUser ? (
-          <div className="welcome">
-            <div className="welcome-icon">✦</div>
-            <h2>{t.chooseUser}</h2>
-            <p>{t.chooseUserDesc}</p>
-          </div>
-        ) : (
-          <>
-            <header className="chat-header">
-              <div className="chat-person">
-                <div className="avatar large">
-                  {(selectedUser.display_name || selectedUser.username || "?")
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
-                <div>
-                  <strong>{selectedUser.display_name}</strong>
-                  <span>@{selectedUser.username}</span>
-                </div>
-              </div>
-              <button onClick={() => setSelectedUser(null)}>×</button>
-            </header>
-
-            <div className="messages">
-              {messages.length === 0 ? (
-                <div className="empty-chat">
-                  <div>💬</div>
-                  <strong>{t.firstMessage}</strong>
-                  <span>{t.firstMessageDesc}</span>
-                </div>
-              ) : (
-                messages.map((message) => {
-                  const mine = message.sender_id === session.user.id;
-
-                  return (
-                    <div key={message.id} className={`message-row ${mine ? "mine" : "theirs"}`}>
-                      <div className="message">
-                        {message.file_url ? (
-                          <a
-                            href={message.file_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="file-message"
-                          >
-                            <span>📎</span>
-                            <div>
-                              <strong>{message.content}</strong>
-                              <small>{t.openFile}</small>
-                            </div>
-                          </a>
-                        ) : (
-                          <div className="message-content">{message.content}</div>
-                        )}
-
-                        <div className="message-bottom">
-                          <span>{formatTime(message.created_at, lang)}</span>
-                          <button onClick={() => toggleReaction(message)}>
-                            {message.reactions?.heart ? "❤️" : "♡"}
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+        <section style={{ ...cardStyle, minHeight: "calc(100vh - 48px)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          {!selectedUser ? <div style={{ flex: 1, display: "grid", placeItems: "center", padding: 30, textAlign: "center" }}><div><div style={{ fontSize: 24, fontWeight: 800 }}>{t.chooseUser}</div><div style={{ opacity: .6, marginTop: 8 }}>{t.chooseUserDesc}</div></div></div> : <>
+            <div style={{ padding: 18, borderBottom: `1px solid ${darkMode ? "#27272a" : "#e4e4e7"}` }}><div style={{ fontWeight: 800 }}>{selectedUser.display_name || selectedUser.username}</div><div style={{ opacity: .55, fontSize: 13 }}>@{selectedUser.username}</div></div>
+            <div style={{ flex: 1, overflowY: "auto", padding: 18 }}>
+              {!messages.length && <div style={{ textAlign: "center", opacity: .55, padding: 40 }}><div style={{ fontWeight: 700 }}>{t.firstMessage}</div><div style={{ marginTop: 6 }}>{t.firstMessageDesc}</div></div>}
+              {messages.map((message) => {
+                const mine = message.sender_id === session.user.id;
+                return <div key={message.id} style={{ display: "flex", justifyContent: mine ? "flex-start" : "flex-end", marginBottom: 10 }}><div style={{ maxWidth: "75%", padding: "10px 13px", borderRadius: 14, background: mine ? "#2563eb" : (darkMode ? "#27272a" : "#e4e4e7"), color: mine ? "#fff" : "inherit" }}>
+                  {message.message_type === "file" ? <a href={message.content} target="_blank" rel="noreferrer" style={{ color: "inherit", textDecoration: "underline" }}>{message.file_name || t.openFile}</a> : <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere" }}>{message.content}</div>}
+                  <div style={{ fontSize: 11, opacity: .65, marginTop: 4 }}>{formatTime(message.created_at, lang)}</div>
+                </div></div>;
+              })}
               <div ref={messagesEndRef} />
             </div>
-
-            <div className="composer">
-              <input ref={fileInputRef} type="file" hidden onChange={uploadFile} />
-              <button
-                className="attach"
-                disabled={sendingFile}
-                onClick={() => fileInputRef.current?.click()}
-                title={t.fileUpload}
-              >
-                {sendingFile ? "…" : "📎"}
-              </button>
-              <textarea
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                onKeyDown={handleMessageKeyDown}
-                placeholder={t.messagePlaceholder}
-                rows={1}
-              />
-              <button
-                className="send"
-                disabled={busy || !messageText.trim()}
-                onClick={sendMessage}
-              >
-                ➤
-              </button>
+            <div style={{ padding: 12, borderTop: `1px solid ${darkMode ? "#27272a" : "#e4e4e7"}`, display: "flex", gap: 8 }}>
+              <input value={messageText} onChange={(e) => setMessageText(e.target.value)} placeholder={t.messagePlaceholder} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }} style={{ ...inputStyle, margin: 0, flex: 1 }} />
+              <input ref={fileInputRef} onChange={uploadFile} type="file" hidden />
+              <button disabled={sendingFile} onClick={() => fileInputRef.current?.click()} style={secondaryButton}>{sendingFile ? "…" : "📎"}</button>
+              <button disabled={busy || !messageText.trim()} onClick={sendMessage} style={primaryButton}>{t.login === "ورود" ? "ارسال" : "Send"}</button>
             </div>
-          </>
-        )}
-      </section>
+          </>}
+        </section>
+      </div>
 
-      {showSupport && (
-        <div className="modal-overlay" onClick={() => setShowSupport(false)}>
-          <div className="modal support" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowSupport(false)}>
-              ×
-            </button>
-            <div className="modal-icon">🎧</div>
-            <h2>{t.support}</h2>
-            <p>{t.supportDesc}</p>
-            <a
-              href="https://utino.org/chat/supportusername"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="support-link"
-            >
-              {t.supportUtino}
-            </a>
-            <a
-              href="https://t.me/parhamsoleimanybot"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="support-link"
-            >
-              {t.supportTelegram}
-            </a>
-          </div>
-        </div>
-      )}
+      {error && <div style={{ position: "fixed", bottom: 18, left: 18, right: 18, maxWidth: 700, margin: "0 auto", ...noticeError, boxShadow: "0 12px 40px rgba(0,0,0,.25)" }}>{error}</div>}
 
-      {showProfile && (
-        <div className="modal-overlay" onClick={() => setShowProfile(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setShowProfile(false)}>
-              ×
-            </button>
-            <div className="profile-big-avatar">
-              {(profile?.display_name || profile?.username || "?").charAt(0).toUpperCase()}
-            </div>
-            <h2>{profile?.display_name}</h2>
-            <p>@{profile?.username}</p>
-            {profile?.contact_value && (
-              <div className="profile-contact">
-                <span>{t.contact}</span>
-                <strong>{profile.contact_value}</strong>
-              </div>
-            )}
-            <button className="primary-button" onClick={logout}>
-              {t.logout}
-            </button>
-          </div>
-        </div>
-      )}
-
-      {error && (
-        <div className="toast error-toast">
-          <span>{error}</span>
-          <button onClick={() => setError("")}>×</button>
-        </div>
-      )}
-
-      {success && (
-        <div className="toast success-toast">
-          <span>{success}</span>
-          <button onClick={() => setSuccess("")}>×</button>
-        </div>
-      )}
-
-      <style jsx global>{styles}</style>
+      {showProfile && <Modal title={t.profile} onClose={() => setShowProfile(false)} darkMode={darkMode}><div><strong>{profile?.display_name || ""}</strong></div><div style={{ opacity: .65, marginTop: 4 }}>@{profile?.username || ""}</div>{profile?.contact_value && <div style={{ marginTop: 12 }}>{t.contact}: {profile.contact_value}</div>}</Modal>}
+      {showSupport && <Modal title={t.support} onClose={() => setShowSupport(false)} darkMode={darkMode}><p>{t.supportDesc}</p><a href="https://t.me/parhamsoleimanybot" target="_blank" rel="noreferrer" style={linkStyle}>{t.supportTelegram}</a><a href="https://utino.org/chat/supportusername" target="_blank" rel="noreferrer" style={linkStyle}>{t.supportUtino}</a><a href="https://wdner.co" target="_blank" rel="noreferrer" style={linkStyle}>WDNER</a><a href="https://iparham.com" target="_blank" rel="noreferrer" style={linkStyle}>iParham</a></Modal>}
     </main>
   );
 }
 
-const styles = `
-* { box-sizing: border-box; }
-html, body {
-  margin: 0;
-  padding: 0;
-  min-height: 100%;
-  font-family: Inter, Vazirmatn, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-}
-button, input, textarea, select { font: inherit; }
-button { cursor: pointer; }
+const inputStyle = {
+  width: "100%",
+  boxSizing: "border-box",
+  padding: "12px 13px",
+  marginBottom: 10,
+  borderRadius: 12,
+  border: "1px solid #3f3f46",
+  background: "transparent",
+  color: "inherit",
+  outline: "none",
+};
 
-.screen {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  background: #080a10;
-  color: white;
-}
-.loader-card { display: flex; flex-direction: column; gap: 18px; align-items: center; opacity: .85; }
-.spinner {
-  width: 36px; height: 36px; border-radius: 50%;
-  border: 3px solid rgba(255,255,255,.15);
-  border-top-color: white;
-  animation: spin .8s linear infinite;
-}
-@keyframes spin { to { transform: rotate(360deg); } }
+const primaryButton = {
+  width: "100%",
+  padding: "12px 14px",
+  border: 0,
+  borderRadius: 12,
+  background: "#2563eb",
+  color: "white",
+  cursor: "pointer",
+  fontWeight: 700,
+};
 
-.auth-screen.dark, .app.dark {
-  --bg: #080a10;
-  --panel: #10131b;
-  --panel2: #151923;
-  --border: rgba(255,255,255,.08);
-  --text: #f5f7fb;
-  --muted: #8d95a7;
-  --input: #0d1017;
-  --accent: #7c6cff;
-  --accent2: #6557ed;
-  --mine: #6659e9;
-  --theirs: #171b25;
-}
-.auth-screen.light, .app.light {
-  --bg: #f5f7fb;
-  --panel: #ffffff;
-  --panel2: #f0f2f7;
-  --border: rgba(0,0,0,.08);
-  --text: #151823;
-  --muted: #6f7585;
-  --input: #f4f5f8;
-  --accent: #6758e9;
-  --accent2: #5748db;
-  --mine: #6758e9;
-  --theirs: #eef0f5;
-}
+const secondaryButton = {
+  width: "100%",
+  padding: "11px 12px",
+  borderRadius: 12,
+  border: "1px solid #3f3f46",
+  background: "transparent",
+  color: "inherit",
+  cursor: "pointer",
+};
 
-.auth-screen {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  position: relative;
-  overflow: hidden;
-  background: var(--bg);
-  color: var(--text);
-}
-.auth-background {
-  position: absolute; inset: -30%;
-  background: radial-gradient(circle at 50% 30%, rgba(124,108,255,.18), transparent 30%);
-  pointer-events: none;
-}
-.auth-card {
-  width: min(460px, 100%);
-  position: relative;
-  z-index: 1;
-  padding: 30px;
-  border: 1px solid var(--border);
-  border-radius: 28px;
-  background: color-mix(in srgb, var(--panel) 94%, transparent);
-  box-shadow: 0 30px 100px rgba(0,0,0,.3);
-  backdrop-filter: blur(25px);
-}
-.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-.language-button, .theme-button {
-  border: 1px solid var(--border); background: var(--panel2); color: var(--text);
-  border-radius: 10px; min-width: 42px; height: 36px;
-}
-.language-button { padding: 0 11px; }
-.theme-button { padding: 0 10px; }
-.brand { display: flex; align-items: center; gap: 13px; }
-.brand-icon {
-  width: 46px; height: 46px; border-radius: 15px; display: grid; place-items: center;
-  background: var(--accent); color: white; font-size: 23px;
-  box-shadow: 0 12px 35px rgba(124,108,255,.3);
-}
-.brand h1 { margin: 0; font-size: 22px; }
-.brand p { margin: 3px 0 0; color: var(--muted); font-size: 13px; }
-.mode-switch {
-  display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 24px 0;
-  padding: 5px; border-radius: 13px; background: var(--input);
-}
-.mode-switch button { border: 0; border-radius: 10px; padding: 11px; background: transparent; color: var(--muted); }
-.mode-switch button.active { background: var(--panel2); color: var(--text); }
-.form { display: flex; flex-direction: column; gap: 8px; }
-.form label { margin-top: 6px; color: var(--muted); font-size: 13px; }
-.field-heading { display: flex; align-items: center; justify-content: space-between; margin-top: 6px; }
-.field-heading label { margin: 0; }
-.field-heading span { color: var(--muted); font-size: 11px; }
-.form input, .form select {
-  width: 100%; border: 1px solid var(--border); background: var(--input); color: var(--text);
-  outline: none; border-radius: 13px; padding: 13px 14px;
-}
-.form input:focus, .form select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,108,255,.1); }
-.primary-button {
-  width: 100%; border: 0; border-radius: 14px; padding: 14px; margin-top: 10px;
-  color: white; background: var(--accent); transition: .2s; font-weight: 700;
-}
-.primary-button:hover { background: var(--accent2); transform: translateY(-1px); }
-.primary-button:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-.alert { padding: 11px 13px; border-radius: 12px; font-size: 13px; margin-top: 7px; line-height: 1.6; }
-.alert.error { background: rgba(255,70,90,.1); color: #ff8795; }
-.alert.success { background: rgba(50,200,120,.1); color: #66d99d; }
+const smallButton = { border: "1px solid #3f3f46", borderRadius: 10, padding: "7px 9px", background: "transparent", color: "inherit", cursor: "pointer" };
+const noticeError = { padding: 12, borderRadius: 12, background: "#7f1d1d", color: "#fff", marginBottom: 10 };
+const noticeSuccess = { padding: 12, borderRadius: 12, background: "#14532d", color: "#fff", marginBottom: 10 };
+const linkStyle = { display: "block", padding: "10px 0", color: "#60a5fa" };
 
-.app {
-  min-height: 100vh; display: flex; background: var(--bg); color: var(--text);
+function Modal({ title, onClose, children }) {
+  return <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.62)", display: "grid", placeItems: "center", padding: 20, zIndex: 20 }}><div style={{ width: "min(500px, 100%)", background: "#18181b", color: "#f4f4f5", borderRadius: 18, padding: 22 }}><div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 10 }}><h2 style={{ margin: 0 }}>{title}</h2><button onClick={onClose} style={smallButton}>×</button></div>{children}</div></div>;
 }
-.sidebar {
-  width: 350px; min-width: 350px; height: 100vh; border-inline-end: 1px solid var(--border);
-  background: var(--panel); display: flex; flex-direction: column;
-}
-.sidebar-top { padding: 18px 20px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
-.brand.small .brand-icon { width: 38px; height: 38px; border-radius: 12px; font-size: 18px; }
-.brand.small h1 { font-size: 17px; }
-.brand.small span { color: var(--muted); font-size: 11px; }
-.top-actions { display: flex; gap: 5px; direction: ltr; }
-.top-actions button {
-  min-width: 32px; height: 32px; border: 0; border-radius: 9px;
-  background: var(--panel2); color: var(--text); padding: 0 8px;
-}
-.me-card {
-  margin: 0 15px 15px; padding: 12px; display: flex; align-items: center; gap: 11px;
-  background: var(--panel2); border-radius: 16px; border: 1px solid transparent; color: var(--text); text-align: inherit;
-}
-.me-card:hover { border-color: var(--border); }
-.avatar {
-  width: 42px; height: 42px; min-width: 42px; display: grid; place-items: center;
-  border-radius: 50%; background: var(--accent); color: white; font-weight: 800;
-}
-.avatar.large { width: 45px; height: 45px; }
-.me-info, .user-text { min-width: 0; flex: 1; }
-.me-info strong, .user-text strong { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-.me-info span, .user-text span {
-  display: block; margin-top: 3px; color: var(--muted); font-size: 12px; direction: ltr;
-}
-.more-button { border: 0; background: transparent; color: var(--muted); font-size: 20px; }
-.search-box {
-  margin: 0 15px 16px; height: 44px; display: flex; align-items: center; gap: 8px; padding: 0 13px;
-  background: var(--input); border: 1px solid var(--border); border-radius: 13px;
-}
-.search-box span { font-size: 22px; color: var(--muted); }
-.search-box input { min-width: 0; width: 100%; border: 0; outline: 0; background: transparent; color: var(--text); }
-.users-title { padding: 0 20px 9px; display: flex; justify-content: space-between; color: var(--muted); font-size: 12px; }
-.users-list { flex: 1; overflow-y: auto; padding: 0 10px; }
-.user-item {
-  width: 100%; border: 0; background: transparent; color: var(--text); display: flex; align-items: center;
-  gap: 11px; padding: 10px; border-radius: 14px; text-align: inherit;
-}
-.user-item:hover, .user-item.selected { background: var(--panel2); }
-.empty-users { padding: 30px 15px; text-align: center; color: var(--muted); font-size: 13px; }
-.sidebar-bottom { border-top: 1px solid var(--border); padding: 10px; }
-.sidebar-bottom button {
-  width: 100%; padding: 11px 13px; border: 0; background: transparent; color: var(--muted);
-  border-radius: 10px; text-align: inherit;
-}
-.sidebar-bottom button:hover { background: var(--panel2); color: var(--text); }
-.sidebar-bottom span { margin-inline-end: 8px; }
-
-.chat {
-  flex: 1; min-width: 0; height: 100vh; display: flex; flex-direction: column;
-  background: radial-gradient(circle at 50% 20%, rgba(124,108,255,.06), transparent 35%), var(--bg);
-}
-.chat-header {
-  height: 75px; border-bottom: 1px solid var(--border); display: flex;
-  justify-content: space-between; align-items: center; padding: 12px 22px;
-}
-.chat-person { display: flex; align-items: center; gap: 12px; }
-.chat-person strong { display: block; }
-.chat-person span { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; direction: ltr; }
-.chat-header > button { border: 0; background: var(--panel2); color: var(--muted); border-radius: 10px; width: 35px; height: 35px; }
-.messages { flex: 1; overflow-y: auto; padding: 25px 7%; }
-.message-row { display: flex; margin: 6px 0; }
-.message-row.mine { justify-content: flex-end; }
-.message-row.theirs { justify-content: flex-start; }
-.message { max-width: min(600px, 75%); padding: 10px 13px; border-radius: 17px; box-shadow: 0 5px 20px rgba(0,0,0,.05); }
-.mine .message { background: var(--mine); color: white; border-bottom-right-radius: 5px; }
-.theirs .message { background: var(--theirs); border-bottom-left-radius: 5px; }
-.message-content { white-space: pre-wrap; word-break: break-word; line-height: 1.6; }
-.message-bottom { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-top: 5px; font-size: 10px; opacity: .65; }
-.message-bottom button { border: 0; background: transparent; padding: 0; cursor: pointer; }
-.file-message { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 10px; }
-.file-message > span { font-size: 26px; }
-.file-message strong, .file-message small { display: block; }
-.file-message small { opacity: .65; margin-top: 3px; }
-.composer {
-  margin: 15px; min-height: 58px; padding: 8px; display: flex; gap: 8px; align-items: flex-end;
-  background: var(--panel); border: 1px solid var(--border); border-radius: 17px;
-}
-.composer textarea {
-  flex: 1; min-height: 40px; max-height: 140px; resize: none; border: 0; outline: 0;
-  background: transparent; color: var(--text); padding: 10px; line-height: 1.5;
-}
-.attach, .send { width: 42px; height: 42px; min-width: 42px; border: 0; border-radius: 12px; }
-.attach { background: var(--panel2); color: var(--text); }
-.send { background: var(--accent); color: white; }
-.send:disabled, .attach:disabled { opacity: .4; cursor: not-allowed; }
-.welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 25px; }
-.welcome-icon { width: 76px; height: 76px; display: grid; place-items: center; border-radius: 25px; background: var(--accent); color: white; font-size: 34px; box-shadow: 0 25px 60px rgba(124,108,255,.25); }
-.welcome h2 { margin: 22px 0 5px; }
-.welcome p { color: var(--muted); max-width: 430px; line-height: 1.8; }
-.empty-chat { height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; color: var(--muted); gap: 7px; }
-.empty-chat div { font-size: 38px; margin-bottom: 5px; }
-.empty-chat strong { color: var(--text); }
-
-.modal-overlay {
-  position: fixed; z-index: 100; inset: 0; display: grid; place-items: center; padding: 20px;
-  background: rgba(0,0,0,.6); backdrop-filter: blur(8px);
-}
-.modal {
-  width: min(430px, 100%); position: relative; padding: 30px; border: 1px solid var(--border);
-  border-radius: 25px; background: var(--panel); text-align: center; box-shadow: 0 30px 100px rgba(0,0,0,.4);
-}
-.modal-close { position: absolute; top: 14px; inset-inline-start: 14px; width: 32px; height: 32px; border: 0; border-radius: 9px; background: var(--panel2); color: var(--muted); }
-.modal-icon { width: 60px; height: 60px; display: grid; place-items: center; margin: 0 auto 15px; border-radius: 19px; background: var(--panel2); font-size: 27px; }
-.modal h2 { margin: 5px 0; }
-.modal p { color: var(--muted); line-height: 1.7; }
-.support-link { display: block; padding: 13px; margin-top: 9px; border-radius: 12px; background: var(--panel2); color: var(--text); text-decoration: none; }
-.support-link:hover { background: var(--accent); color: white; }
-.profile-big-avatar { width: 80px; height: 80px; display: grid; place-items: center; margin: 0 auto 15px; border-radius: 50%; background: var(--accent); color: white; font-size: 30px; font-weight: 800; }
-.profile-contact { padding: 14px; margin: 18px 0; background: var(--panel2); border-radius: 13px; }
-.profile-contact span, .profile-contact strong { display: block; }
-.profile-contact span { color: var(--muted); font-size: 11px; margin-bottom: 5px; }
-
-.toast {
-  position: fixed; z-index: 200; left: 20px; bottom: 20px; max-width: min(420px, calc(100vw - 40px));
-  padding: 13px 15px; display: flex; align-items: center; gap: 15px; border-radius: 14px;
-  box-shadow: 0 15px 50px rgba(0,0,0,.3); backdrop-filter: blur(15px);
-}
-.toast button { border: 0; background: transparent; color: inherit; opacity: .7; }
-.error-toast { background: #5e2028; color: #ffd9dd; }
-.success-toast { background: #164f38; color: #d5ffe9; }
-
-@media (max-width: 800px) {
-  .sidebar { width: 290px; min-width: 290px; }
-  .messages { padding: 20px 15px; }
-  .message { max-width: 85%; }
-}
-@media (max-width: 620px) {
-  .app { display: block; }
-  .sidebar { width: 100%; min-width: 0; height: 43vh; max-height: 420px; }
-  .chat { height: 57vh; }
-  .sidebar-bottom { display: none; }
-  .users-list { min-height: 80px; }
-  .chat-header { height: 64px; }
-  .composer { margin: 8px; }
-  .auth-card { padding: 24px 19px; }
-}
-`;
