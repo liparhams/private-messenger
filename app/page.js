@@ -25,6 +25,7 @@ export default function Home() {
     return createClient(url, key);
   }, []);
 
+  // ثبت‌نام با نام کاربری
   async function register() {
     if (!username || !password) {
       setMessage("نام کاربری و رمز عبور را وارد کنید.");
@@ -37,17 +38,17 @@ export default function Home() {
     }
 
     if (!/^[a-zA-Z0-9_]+$/.test(username)) {
-      setMessage("نام کاربری فقط می‌تواند شامل حروف انگلیسی، عدد و _ باشد.");
+      setMessage("نام کاربری فقط حروف انگلیسی، عدد و _ مجاز است.");
       return;
     }
 
-    if (password.length < 6) {
-      setMessage("رمز عبور باید حداقل ۶ کاراکتر باشد.");
+    if (password.length < 4) {
+      setMessage("رمز عبور باید حداقل ۴ کاراکتر باشد.");
       return;
     }
 
     if (!supabase) {
-      setMessage("تنظیمات Supabase هنوز کامل نیست.");
+      setMessage("اتصال به سرور برقرار نیست.");
       return;
     }
 
@@ -55,28 +56,27 @@ export default function Home() {
     setMessage("");
 
     try {
-      // پشت صحنه ایمیل جعلی می‌سازیم (کاربر نمی‌بیند)
-      const fakeEmail = `${username.toLowerCase()}@private-messenger.app`;
+      // چک کردن تکراری نبودن نام کاربری
+      const { data: existing } = await supabase
+        .from("users")
+        .select("id")
+        .eq("username", username.toLowerCase())
+        .maybeSingle();
 
-      const { error } = await supabase.auth.signUp({
-        email: fakeEmail,
-        password,
-        options: {
-          data: {
-            username: username,
-            display_name: username
-          }
-        }
+      if (existing) {
+        setMessage("این نام کاربری قبلاً ثبت شده است.");
+        setLoading(false);
+        return;
+      }
+
+      // ثبت کاربر جدید
+      const { error } = await supabase.from("users").insert({
+        username: username.toLowerCase(),
+        password: password // فعلاً ساده ذخیره می‌کنیم
       });
 
       if (error) {
-        if (error.message.includes("already registered") || error.message.includes("User already registered")) {
-          setMessage("این نام کاربری قبلاً ثبت شده است.");
-        } else if (error.message.toLowerCase().includes("password")) {
-          setMessage("رمز عبور باید حداقل ۶ کاراکتر باشد.");
-        } else {
-          setMessage("خطا در ثبت‌نام: " + error.message);
-        }
+        setMessage("خطا در ثبت‌نام: " + error.message);
         return;
       }
 
@@ -91,9 +91,17 @@ export default function Home() {
     }
   }
 
+  // ورود با نام کاربری
   async function login() {
-    if (!userId || !password) {
-      setMessage("شناسه کاربری و رمز عبور را وارد کنید.");
+    const loginName = mode === "login" ? userId : username;
+
+    if (!loginName || !password) {
+      setMessage("نام کاربری و رمز عبور را وارد کنید.");
+      return;
+    }
+
+    if (!supabase) {
+      setMessage("اتصال به سرور برقرار نیست.");
       return;
     }
 
@@ -101,8 +109,28 @@ export default function Home() {
     setMessage("");
 
     try {
-      // فعلاً ورود با شناسه عددی را کامل نکردیم
-      setMessage("ورود با شناسه عددی در مرحله بعد اضافه می‌شود.");
+      const { data, error } = await supabase
+        .from("users")
+        .select("*")
+        .eq("username", loginName.toLowerCase())
+        .eq("password", password)
+        .maybeSingle();
+
+      if (error) {
+        setMessage("خطا در ورود: " + error.message);
+        return;
+      }
+
+      if (!data) {
+        setMessage("نام کاربری یا رمز عبور اشتباه است.");
+        return;
+      }
+
+      // ورود موفق
+      setMessage(`خوش آمدید ${data.username}!`);
+      // اینجا بعداً صفحه چت را باز می‌کنیم
+    } catch (err) {
+      setMessage("خطایی رخ داد. دوباره تلاش کنید.");
     } finally {
       setLoading(false);
     }
@@ -140,11 +168,10 @@ export default function Home() {
 
         {mode === "login" ? (
           <div className="form">
-            <label>شناسه کاربری</label>
+            <label>نام کاربری</label>
             <input
               type="text"
-              inputMode="numeric"
-              placeholder="مثلاً 102458"
+              placeholder="نام کاربری"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
             />
@@ -174,7 +201,7 @@ export default function Home() {
             <label>رمز عبور</label>
             <input
               type="password"
-              placeholder="حداقل ۶ کاراکتر"
+              placeholder="حداقل ۴ کاراکتر"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -189,4 +216,4 @@ export default function Home() {
       </div>
     </main>
   );
-        }
+                }
