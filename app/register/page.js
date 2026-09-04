@@ -1,11 +1,8 @@
 "use client";
 import {useEffect,useRef,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
+import {db,supabaseUrl} from "../lib/supabase-client";
 import mapError from "../lib/error-map";
 import "../auth.css";
-const SUPABASE_URL="https://jcblfgrcsgbdeamogzfc.supabase.co";
-const SUPABASE_KEY="sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
-const db=createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const emailFor=u=>`${u}@utino.chat`;
 const USERNAME=/^[a-z0-9_]{3,20}$/;
 function friendly(code){return mapError(code,"fa")}
@@ -22,7 +19,7 @@ export default function Register(){
   if(form.password!==form.confirm){setError("رمزهای عبور یکسان نیستند.");return}
   setBusy(true);controller.current=new AbortController();const timer=setTimeout(()=>controller.current?.abort(),15000);
   try{
-   const response=await fetch(`${SUPABASE_URL}/functions/v1/public-register`,{method:"POST",headers:{"content-type":"application/json","apikey":SUPABASE_KEY},body:JSON.stringify({username,display_name:displayName,password:form.password}),signal:controller.current.signal});
+   const response=await fetch(`${supabaseUrl}/functions/v1/public-register`,{method:"POST",headers:{"content-type":"application/json","apikey":process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({username,display_name:displayName,password:form.password}),signal:controller.current.signal});
    const payload=await response.json().catch(()=>null);
    if(!response.ok){setError(friendly(payload?.error||`status ${response.status}`));return}
    const{error:loginError}=await db.auth.signInWithPassword({email:emailFor(username),password:form.password});
