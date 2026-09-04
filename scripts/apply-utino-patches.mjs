@@ -1,29 +1,56 @@
 import fs from 'node:fs';
 
-const replace = (file, find, value) => {
+function patch(file, find, value) {
   const source = fs.readFileSync(file, 'utf8');
-  if (!source.includes(find)) throw new Error(`Patch target not found in ${file}: ${find.slice(0,80)}`);
+  if (source.includes(value)) return false;
+  if (!source.includes(find)) throw new Error(`Patch target not found in ${file}: ${find.slice(0, 100)}`);
   fs.writeFileSync(file, source.replace(find, value));
-};
+  return true;
+}
 
 const chat = 'app/messenger/ChatWorkspace.js';
-replace(chat, 'import "./v1.css";', 'import "./v1.css";\nimport "./utino-enhancements.css";');
-replace(chat, 'const [groupOpen, setGroupOpen] = useState(false);', 'const [groupOpen, setGroupOpen] = useState(false);\n  const [createMenuOpen, setCreateMenuOpen] = useState(false);\n  const [channelOpen, setChannelOpen] = useState(false);\n  const [channelName, setChannelName] = useState("");\n  const [channelDescription, setChannelDescription] = useState("");\n  const [channelUsername, setChannelUsername] = useState("");\n  const [channelPublic, setChannelPublic] = useState(true);');
-replace(chat, 'select("id,type,title,created_by,created_at")', 'select("id,type,title,created_by,created_at,is_channel,description,channel_username,is_public")');
-replace(chat, '  async function addMember(user) {', '  async function createChannel() {\n    if (!channelName.trim()) return;\n    setBusy(true); setError("");\n    const { data, error: e } = await db.rpc("create_channel_conversation", { channel_title: channelName.trim(), channel_description: channelDescription.trim(), channel_username: channelUsername.trim() || null, channel_public: channelPublic });\n    setBusy(false);\n    if (e || !data) { setError(e?.message || t.error); return; }\n    setChannelOpen(false); setChannelName(""); setChannelDescription(""); setChannelUsername(""); setChannelPublic(true);\n    await loadConversations(); setSelectedId(data); setMobileSidebar(false);\n  }\n\n  async function addMember(user) {');
-replace(chat, '<div className="uc-sidebar-tools"><button className="uc-new-group" onClick={() => setGroupOpen(true)}><Icon name="plus" size={17}/>{t.newGroup}</button></div>', '<div className="uc-sidebar-tools uc-create-tools"><button className="uc-new-group uc-create-trigger" onClick={() => setCreateMenuOpen(v => !v)}><Icon name="plus" size={16}/><span>جدید</span></button>{createMenuOpen && <div className="uc-create-menu"><button onClick={() => { setCreateMenuOpen(false); document.querySelector(".uc-search-wrap input")?.focus(); }}>افزودن کاربر / شروع گفتگو</button><button onClick={() => { setCreateMenuOpen(false); setGroupOpen(true); }}>ساخت گروه</button><button onClick={() => { setCreateMenuOpen(false); setChannelOpen(true); }}>ساخت کانال</button></div>}</div>');
-replace(chat, '{groupOpen && <Modal onClose={() => { setGroupOpen(false); setGroupSelection([]); }} title={t.create}>', '{channelOpen && <Modal onClose={() => setChannelOpen(false)} title="ساخت کانال"><div className="uc-channel-form"><label>نام کانال<input value={channelName} onChange={e => setChannelName(e.target.value)} maxLength={80} autoFocus placeholder="مثلاً Utino News"/></label><label>شناسه کانال<input value={channelUsername} onChange={e => setChannelUsername(e.target.value.replace(/[^a-z0-9_]/gi, "").toLowerCase())} maxLength={32} placeholder="utino_news" dir="ltr"/></label><label>توضیحات<textarea value={channelDescription} onChange={e => setChannelDescription(e.target.value)} maxLength={500} placeholder="درباره این کانال..."/></label><label className="uc-channel-check"><input type="checkbox" checked={channelPublic} onChange={e => setChannelPublic(e.target.checked)}/><span>کانال عمومی باشد</span></label><div className="uc-modal-actions"><button onClick={() => setChannelOpen(false)}>لغو</button><button className="primary" onClick={createChannel} disabled={busy || !channelName.trim()}>ساخت کانال</button></div></div></Modal>}\n      {groupOpen && <Modal onClose={() => { setGroupOpen(false); setGroupSelection([]); }} title={t.create}>');
+patch(chat, 'import "./v1.css";', 'import "./v1.css";\nimport "./utino-enhancements.css";');
+patch(chat, '  const [groupOpen, setGroupOpen] = useState(false);', '  const [groupOpen, setGroupOpen] = useState(false);\n  const [createMenuOpen, setCreateMenuOpen] = useState(false);\n  const [channelOpen, setChannelOpen] = useState(false);\n  const [channelName, setChannelName] = useState("");\n  const [channelDescription, setChannelDescription] = useState("");\n  const [channelUsername, setChannelUsername] = useState("");\n  const [channelPublic, setChannelPublic] = useState(true);');
+patch(chat, 'db.from("conversations").select("id,type,title,created_by,created_at")', 'db.from("conversations").select("id,type,title,created_by,created_at,is_channel,description,channel_username,is_public")');
+patch(chat, '  async function addMember(user) {', `  async function createChannel() {
+    const title = channelName.trim();
+    if (!title || busy) return;
+    setBusy(true); setError("");
+    const { data, error: e } = await db.rpc("create_channel_conversation", {
+      channel_title: title,
+      channel_description: channelDescription.trim(),
+      channel_username: channelUsername.trim() || null,
+      channel_public: channelPublic
+    });
+    setBusy(false);
+    if (e || !data) { setError(e?.message || t.error); return; }
+    setChannelOpen(false); setChannelName(""); setChannelDescription(""); setChannelUsername(""); setChannelPublic(true);
+    await loadConversations(); setSelectedId(data); setMobileSidebar(false);
+  }
+
+  async function addMember(user) {`);
+patch(chat, '<div className="uc-sidebar-tools"><button className="uc-new-group" onClick={() => setGroupOpen(true)}><Icon name="plus" size={17}/>{t.newGroup}</button></div>', `<div className="uc-sidebar-tools uc-create-tools">
+          <button className="uc-new-group uc-create-trigger" onClick={() => setCreateMenuOpen(v => !v)} aria-expanded={createMenuOpen}>
+            <Icon name="plus" size={16}/><span>جدید</span>
+          </button>
+          {createMenuOpen && <div className="uc-create-menu">
+            <button type="button" onClick={() => { setCreateMenuOpen(false); document.querySelector(".uc-search-wrap input")?.focus(); }}>افزودن کاربر / شروع گفتگو</button>
+            <button type="button" onClick={() => { setCreateMenuOpen(false); setGroupOpen(true); }}>ساخت گروه</button>
+            <button type="button" onClick={() => { setCreateMenuOpen(false); setChannelOpen(true); }}>ساخت کانال</button>
+          </div>}
+        </div>`);
+patch(chat, '{groupOpen && <Modal onClose={() => { setGroupOpen(false); setGroupSelection([]); }} title={t.create}>', `{channelOpen && <Modal onClose={() => setChannelOpen(false)} title="ساخت کانال"><div className="uc-channel-form">
+        <label>نام کانال<input value={channelName} onChange={e => setChannelName(e.target.value)} maxLength={80} autoFocus placeholder="مثلاً Utino News" /></label>
+        <label>شناسه کانال<input value={channelUsername} onChange={e => setChannelUsername(e.target.value.replace(/[^a-z0-9_]/gi, "").toLowerCase())} maxLength={32} placeholder="utino_news" dir="ltr" /></label>
+        <label>توضیحات<textarea value={channelDescription} onChange={e => setChannelDescription(e.target.value)} maxLength={500} placeholder="درباره کانال..." /></label>
+        <label className="uc-channel-check"><input type="checkbox" checked={channelPublic} onChange={e => setChannelPublic(e.target.checked)} /><span>کانال عمومی باشد</span></label>
+        <div className="uc-modal-actions"><button type="button" onClick={() => setChannelOpen(false)}>لغو</button><button type="button" className="primary" onClick={createChannel} disabled={busy || !channelName.trim()}>{busy ? "در حال ساخت…" : "ساخت کانال"}</button></div>
+      </div></Modal>}
+      {groupOpen && <Modal onClose={() => { setGroupOpen(false); setGroupSelection([]); }} title={t.create}>`);
 
 const auth = 'app/page.js';
-replace(auth, 'const [supportOpen, setSupportOpen] = useState(false);', 'const [supportOpen, setSupportOpen] = useState(false);\n  const [registrationEnabled, setRegistrationEnabled] = useState(false);');
-replace(auth, '  useEffect(() => {\n    try {\n      const savedLang = localStorage.getItem("messenger-language");', '  useEffect(() => {\n    supabase.from("app_settings").select("value").eq("key","registration_enabled").maybeSingle().then(({data}) => setRegistrationEnabled(data?.value === true));\n  }, []);\n\n  useEffect(() => {\n    try {\n      const savedLang = localStorage.getItem("messenger-language");');
-replace(auth, '<div style={{ marginTop: 18, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>', '<div style={{ marginTop: 14, textAlign: "center" }}>{registrationEnabled && <a href="/register/" style={{ color: "#60a5fa", fontWeight: 750, fontSize: 13, textDecoration: "none" }}>ساخت حساب جدید</a>}</div><div style={{ marginTop: 10, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>');
+patch(auth, '  const [supportOpen, setSupportOpen] = useState(false);', '  const [supportOpen, setSupportOpen] = useState(false);\n  const [registrationEnabled, setRegistrationEnabled] = useState(false);');
+patch(auth, '  useEffect(() => {\n    try {\n      const savedLang = localStorage.getItem("messenger-language");', '  useEffect(() => {\n    let active = true;\n    supabase.from("app_settings").select("value").eq("key","registration_enabled").maybeSingle().then(({data}) => { if (active) setRegistrationEnabled(data?.value === true); });\n    return () => { active = false; };\n  }, []);\n\n  useEffect(() => {\n    try {\n      const savedLang = localStorage.getItem("messenger-language");');
+patch(auth, '        <div style={{ marginTop: 18, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>', '        {registrationEnabled && <div style={{ marginTop: 16, textAlign: "center" }}><a href="/register/" style={{ color: "#60a5fa", fontWeight: 750, fontSize: 13, textDecoration: "none" }}>ساخت حساب جدید</a></div>}\n        <div style={{ marginTop: 12, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>');
 
-const admin = 'app/admin/page.js';
-replace(admin, 'const tabs=[["home","داشبورد"],["users","کاربران"],["create","ساخت کاربر"],["messages","پیام‌ها"],["logs","لاگ‌ها"],["tickets","پشتیبانی"]];', 'const tabs=[["home","داشبورد"],["users","کاربران"],["create","ساخت کاربر"],["messages","پیام‌ها"],["logs","لاگ‌ها"],["tickets","پشتیبانی"],["settings","تنظیمات"]];');
-replace(admin, 'const[form,setForm]=useState({username:"",display_name:"",password:"",role:"user",is_verified:false});', 'const[form,setForm]=useState({username:"",display_name:"",password:"",role:"user",is_verified:false});\n const[registrationEnabled,setRegistrationEnabled]=useState(false);');
-replace(admin, 'setUsers(u.data||[]);setMsgs(m.data||[]);setLogs(l.data||[])}catch(e)', 'setUsers(u.data||[]);setMsgs(m.data||[]);setLogs(l.data||[]);const{data:sdata,error:se}=await db.from("app_settings").select("value").eq("key","registration_enabled").maybeSingle();if(!se)setRegistrationEnabled(sdata?.value===true)}catch(e)');
-replace(admin, 'async function createUser(e){', 'async function setRegistration(enabled){setBusy(true);setErr("");setSuccess("");try{const{error}=await db.from("app_settings").update({value:enabled,updated_at:new Date().toISOString(),updated_by:me.id}).eq("key","registration_enabled");if(error)throw error;setRegistrationEnabled(enabled);setSuccess(enabled?"ثبت‌نام عمومی روشن شد.":"ثبت‌نام عمومی خاموش شد.");}catch(e){setErr(e.message||"تغییر وضعیت ثبت‌نام انجام نشد.")}finally{setBusy(false)}}\n async function createUser(e){');
-replace(admin, '{tab==="tickets"&&<div className="admin-card"><h2>پشتیبانی</h2>', '{tab==="settings"&&me?.username?.toLowerCase()==="parham"&&<div className="admin-card admin-settings-card"><h2>تنظیمات اصلی</h2><p className="muted">این بخش فقط برای حساب مالک @parham نمایش داده می‌شود.</p><div className="registration-setting"><div><strong>ثبت‌نام عمومی</strong><span>{registrationEnabled?"کاربران می‌توانند از صفحه ثبت‌نام حساب بسازند.":"ثبت‌نام عمومی بسته است و فقط ساخت کاربر از پنل مدیریت فعال است."}</span></div><button type="button" className={`admin-button ${registrationEnabled?"danger":"primary"}`} disabled={busy} onClick={()=>setRegistration(!registrationEnabled)}>{registrationEnabled?"خاموش کردن":"روشن کردن"}</button></div></div>}{tab==="tickets"&&<div className="admin-card"><h2>پشتیبانی</h2>');
-
-console.log('Utino patches applied');
+console.log('Utino patches applied successfully');
