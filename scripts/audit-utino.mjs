@@ -8,6 +8,7 @@ const required = [
   "app/messenger/ChatWorkspaceImpl.js",
   "app/login/page.js",
   "app/intro/page.js",
+  "app/settings/page.js",
   "next.config.js",
   "wrangler.jsonc",
 ];
@@ -42,6 +43,11 @@ for (const token of [
   "chat-files",
   "search_user_directory",
 ]) if (!messenger.includes(token)) failures.push(`messenger:${token}`);
+
+const settings = read("app/settings/page.js");
+for (const token of ["update_my_profile", "get_my_profile", "localStorage", "UTINOCHATV1"]) {
+  if (!settings.includes(token)) failures.push(`settings:${token}`);
+}
 
 const login = read("app/login/page.js");
 for (const token of ["public-register", "get_registration_enabled", "signInWithPassword", "utino.chat"]) {
