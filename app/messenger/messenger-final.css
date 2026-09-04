@@ -1,0 +1,25 @@
+/* Final platform chrome: keep actions in the top bar, never as a floating footer. */
+.uc-sidebar-foot{display:none!important;}
+.uc-messenger-menu{top:10px!important;inset-inline-end:12px!important;z-index:1400!important;}
+.uc-topbar-actions{display:flex;align-items:center;gap:7px;}
+.uc-topbar-actions .uc-profile-trigger{position:static!important;width:42px!important;height:42px!important;margin:0!important;border:1px solid var(--line,#2a3948)!important;border-radius:12px!important;background:var(--panel,#17212b)!important;color:var(--text,#e7edf4)!important;box-shadow:0 8px 24px rgba(0,0,0,.14)!important;}
+.uc-topbar-actions .uc-profile-trigger:hover{background:var(--panel2,#202d3a)!important;transform:translateY(-1px);}
+.uc-topbar-actions .uc-menu-trigger{width:42px!important;height:42px!important;}
+.uc-shell .uc-sidebar-head{padding:10px 14px!important;min-height:64px!important;border-bottom:1px solid var(--line,#2a3948)!important;background:color-mix(in srgb,var(--panel,#17212b) 94%,transparent)!important;}
+.uc-shell .uc-brand{min-height:44px!important;border-radius:12px!important;}
+.uc-shell .uc-search-wrap{margin-top:8px!important;}
+.uc-shell .uc-chat-head{min-height:68px!important;height:68px!important;padding:8px 12px!important;}
+.uc-shell .uc-chat-head-profile{min-width:0!important;}
+.uc-shell .uc-chat-title{min-width:0!important;}
+.uc-shell .uc-chat-title strong,.uc-shell .uc-chat-title span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.uc-shell .uc-chat-actions{display:flex;align-items:center;gap:5px;}
+.uc-shell .uc-chat-actions button{width:38px;height:38px;border-radius:11px;}
+.uc-profile-panel{z-index:1600!important;}
+@media(max-width:720px){
+  .uc-messenger-menu{top:8px!important;inset-inline-end:8px!important;}
+  .uc-topbar-actions{gap:5px;}
+  .uc-topbar-actions .uc-profile-trigger,.uc-topbar-actions .uc-menu-trigger{width:38px!important;height:38px!important;border-radius:11px!important;}
+  .uc-shell .uc-sidebar-head{padding-top:max(8px,env(safe-area-inset-top))!important;}
+  .uc-shell .uc-chat-head{height:60px!important;min-height:60px!important;}
+}
+@media(prefers-reduced-motion:reduce){.uc-topbar-actions .uc-profile-trigger{transform:none!important;}}
