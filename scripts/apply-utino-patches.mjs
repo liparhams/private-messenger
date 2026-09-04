@@ -53,4 +53,7 @@ patch(auth, '  const [supportOpen, setSupportOpen] = useState(false);', '  const
 patch(auth, '  useEffect(() => {\n    try {\n      const savedLang = localStorage.getItem("messenger-language");', '  useEffect(() => {\n    let active = true;\n    supabase.from("app_settings").select("value").eq("key","registration_enabled").maybeSingle().then(({data}) => { if (active) setRegistrationEnabled(data?.value === true); });\n    return () => { active = false; };\n  }, []);\n\n  useEffect(() => {\n    try {\n      const savedLang = localStorage.getItem("messenger-language");');
 patch(auth, '        <div style={{ marginTop: 18, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>', '        {registrationEnabled && <div style={{ marginTop: 16, textAlign: "center" }}><a href="/register/" style={{ color: "#60a5fa", fontWeight: 750, fontSize: 13, textDecoration: "none" }}>ساخت حساب جدید</a></div>}\n        <div style={{ marginTop: 12, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>');
 
+const admin = 'app/admin/page.js';
+patch(admin, 'server_error:"ارتباط با سرور برقرار نشد. اینترنت یا Supabase را بررسی کن."', 'server_error:"ارتباط با سرور برقرار نشد. اینترنت یا Supabase را بررسی کن.","Failed to fetch":"ارتباط با سرور برقرار نشد. اتصال اینترنت یا Supabase را بررسی کن.","Load failed":"ارتباط با سرور برقرار نشد. اتصال اینترنت یا Supabase را بررسی کن."');
+
 console.log('Utino patches applied successfully');
