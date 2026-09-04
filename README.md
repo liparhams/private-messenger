@@ -1,4 +1,4 @@
-# UTINOCHATV1
+# utino chat
 
 A lightweight private messaging platform built with Next.js, React, Supabase and Cloudflare Workers.
 
