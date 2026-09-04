@@ -4,6 +4,6 @@ import "./platform-v7.css";
 import "./creation-polish.css";
 import "./platform-v8.css";
 import "./production-polish.css";
-import SupportLauncher from "./SupportLauncher";
+import "./messenger-final.css";
 import ChatWorkspaceImpl from "./ChatWorkspaceImpl";
-export default function ChatWorkspace(){return <><ChatWorkspaceImpl/><SupportLauncher/></>}
+export default function ChatWorkspace(){return <ChatWorkspaceImpl/>}
