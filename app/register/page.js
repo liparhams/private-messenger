@@ -14,7 +14,7 @@ export default function Register() {
       <section className="auth-card" aria-live="polite">
         <div className="brand-mark">U</div>
         <div className="auth-title">
-          <span>UTINOCHATV1</span>
+          <span>utino chat</span>
           <h1>در حال انتقال…</h1>
         </div>
         <p>صفحه ثبت‌نام یکپارچه در حال آماده‌سازی است.</p>
