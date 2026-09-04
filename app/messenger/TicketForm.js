@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { db } from "../lib/supabase-client";
 import mapError from "../lib/error-map";
 
 const MAX_SUBJECT = 120;
