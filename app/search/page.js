@@ -1,15 +1,6 @@
 "use client";
-import {useState} from "react";
-import {createClient} from "@supabase/supabase-js";
-
-const db=createClient("https://jcblfgrcsgbdeamogzfc.supabase.co","sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K",{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
-
-export default function Search(){
-  const[q,setQ]=useState(""),[r,setR]=useState([]),[e,setE]=useState(""),[busy,setBusy]=useState(false);
-  async function go(){
-    setE("");const v=q.trim().replace(/^@/,"");if(!v)return setR([]);setBusy(true);
-    const{data,error}=await db.from("profiles").select("username,display_name,public_id").ilike("username",v).limit(10);
-    if(error)setE(error.message);setR(data||[]);setBusy(false)
-  }
-  return <main style={{minHeight:"100vh",padding:24,fontFamily:"system-ui",background:"#0b0b10",color:"#f7f7f8"}} dir="rtl"><div style={{maxWidth:720,margin:"0 auto"}}><a href="/" style={{color:"inherit",opacity:.7,textDecoration:"none"}}>← Messenger</a><h1>پیدا کردن کاربر</h1><p style={{opacity:.65}}>نام کاربری را وارد کن.</p><div style={{display:"flex",gap:8}}><input value={q} onChange={e=>setQ(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")go()}} placeholder="@username یا username" aria-label="نام کاربری" style={{flex:1,padding:12,borderRadius:12,border:"1px solid #30303a",background:"#17171d",color:"inherit"}}/><button type="button" onClick={go} disabled={busy} style={{padding:"0 18px",border:0,borderRadius:12}}>{busy?"...":"جستجو"}</button></div>{e&&<p role="alert">{e}</p>}<ul>{r.map(x=><li key={x.public_id} style={{marginTop:12}}><b>{x.display_name}</b> @{x.username}</li>)}</ul></div></main>
-}
+import{useEffect,useRef,useState}from"react";
+import{db}from"../lib/supabase-client";
+import mapError from"../lib/error-map";
+import "../utino-system.css";
+export default function Search(){const[q,setQ]=useState(""),[r,setR]=useState([]),[e,setE]=useState(""),[busy,setBusy]=useState(false),timer=useRef(null);useEffect(()=>()=>clearTimeout(timer.current),[]);function schedule(value){setQ(value);clearTimeout(timer.current);const v=value.trim().replace(/^@/,"");if(!v){setR([]);setE("");return}timer.current=setTimeout(()=>go(v),300)}async function go(raw=q.trim().replace(/^@/,"")){if(!raw)return;setE("");setBusy(true);try{const{data,error}=await db.rpc("search_user_directory",{search_text:raw,result_limit:20});if(error)throw error;setR(data||[])}catch(err){setE(mapError(err,"fa"));setR([])}finally{setBusy(false)}}return <main style={{minHeight:"100vh",padding:24,fontFamily:"system-ui",background:"var(--utino-bg,#0b0b10)",color:"var(--utino-text,#f7f7f8)"}} dir="rtl"><div style={{maxWidth:720,margin:"0 auto"}}><a href="/" style={{color:"inherit",opacity:.7,textDecoration:"none"}}>← Messenger</a><h1>پیدا کردن کاربر</h1><p style={{opacity:.65}}>نام کاربری، نام نمایشی یا شناسه عمومی را جستجو کن.</p><div style={{display:"flex",gap:8}}><input value={q} onChange={e=>schedule(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")go()}} placeholder="@username، نام یا شناسه عمومی" aria-label="جستجوی کاربر" style={{flex:1,padding:12,borderRadius:12,border:"1px solid #30303a",background:"#17171d",color:"inherit"}}/><button type="button" onClick={()=>go()} disabled={busy||!q.trim()} style={{padding:"0 18px",border:0,borderRadius:12}}>{busy?"در حال جستجو…":"جستجو"}</button></div>{e&&<p role="alert">{e}</p>}{!busy&&q.trim()&&!r.length&&!e&&<p style={{opacity:.65}}>نتیجه‌ای پیدا نشد.</p>}<ul>{r.map(x=><li key={x.id} style={{marginTop:12,listStyle:"none"}}><b>{x.display_name}</b> @{x.username}<small style={{display:"block",opacity:.6}}>{x.public_id}</small></li>)}</ul></div></main>}
