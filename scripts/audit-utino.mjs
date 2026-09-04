@@ -14,13 +14,8 @@ const required = [
 ];
 const failures = [];
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
-
 for (const file of required) if (!fs.existsSync(path.join(root, file))) failures.push(`missing:${file}`);
-
-if (failures.length) {
-  console.error(failures.join("\n"));
-  process.exit(1);
-}
+if (failures.length) { console.error(failures.join("\n")); process.exit(1); }
 
 const next = read("next.config.js");
 if (!/output:\s*["']export["']/.test(next)) failures.push("next:output-export");
@@ -30,36 +25,25 @@ if (!/unoptimized:\s*true/.test(next)) failures.push("next:image-unoptimized");
 const wrangler = read("wrangler.jsonc");
 if (!/\"directory\"\s*:\s*\"\.\/out\"/.test(wrangler)) failures.push("wrangler:assets-out");
 if (!/single-page-application/.test(wrangler)) failures.push("wrangler:spa-fallback");
-if (!/\"name\"\s*:\s*\"utino-chat\"/.test(wrangler)) failures.push("wrangler:worker-name");
+if (!/\"name\"\s*:\s*\"utinochat\"/.test(wrangler)) failures.push("wrangler:worker-name");
 
 const messenger = read("app/messenger/ChatWorkspaceImpl.js");
-for (const token of [
-  "create_conversation",
-  "join_conversation",
-  "join_via_invite",
-  "get_or_create_direct_conversation",
-  "mark_messages_seen",
-  "edit_message",
-  "delete_message",
-  "chat-files",
-  "search_user_directory",
-]) if (!messenger.includes(token)) failures.push(`messenger:${token}`);
+for (const token of ["create_conversation","join_conversation","join_via_invite","get_or_create_direct_conversation","mark_messages_seen","edit_message","delete_message","chat-files","search_user_directory"])
+  if (!messenger.includes(token)) failures.push(`messenger:${token}`);
 
 const settings = read("app/settings/page.js");
-for (const token of ["update_my_profile", "get_my_profile", "localStorage", "utino chat"]) {
+for (const token of ["update_my_profile","get_my_profile","localStorage","utino chat"])
   if (!settings.includes(token)) failures.push(`settings:${token}`);
-}
 
 const login = read("app/login/page.js");
-for (const token of ["public-register", "get_registration_enabled", "signInWithPassword", "utino.chat"]) {
+for (const token of ["public-register","get_registration_enabled","signInWithPassword","utino.chat"])
   if (!login.includes(token)) failures.push(`auth:${token}`);
-}
 
 const sourceFiles = [];
 function walk(dir) {
   if (!fs.existsSync(dir)) return;
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (["node_modules", ".next", "out", ".git", ".wrangler"].includes(entry.name)) continue;
+    if (["node_modules",".next","out",".git",".wrangler"].includes(entry.name)) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) walk(full);
     else if (/\.(js|jsx|ts|tsx|css|json|jsonc|mjs|sql|yml|yaml|md)$/.test(entry.name)) sourceFiles.push(full);
@@ -82,5 +66,4 @@ if (failures.length) {
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
-
 console.log(`utino chat static audit passed (${sourceFiles.length} source files scanned).`);
