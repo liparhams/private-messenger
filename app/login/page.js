@@ -3,9 +3,6 @@
 import { useEffect, useState } from "react";
 import { db } from "../lib/supabase-client";
 import mapError from "../lib/error-map";
-import "../utino-platform.css";
-import "../utino-system.css";
-import "../auth.css";
 
 const SUPPORT = {
   telegram: "https://t.me/parhamsoleimanybot",
@@ -80,6 +77,7 @@ const TEXT = {
   },
 };
 
+const USERNAME_RE = /^[a-z0-9_]{3,20}$/;
 const emailFor = (username) => `${username.trim().toLowerCase()}@utino.chat`;
 const isBlocked = (profile) => Boolean(profile?.is_banned || (profile?.banned_until && new Date(profile.banned_until) > new Date()));
 
@@ -108,7 +106,7 @@ export default function LoginPage() {
     try {
       const savedLang = localStorage.getItem("utino-language");
       const savedTheme = localStorage.getItem("utino-theme");
-      const params = new URLSearchParams(location.search);
+      const params = new URLSearchParams(window.location.search);
       if (savedLang === "fa" || savedLang === "en") setLang(savedLang);
       if (savedTheme === "light" || savedTheme === "dark") setDark(savedTheme === "dark");
       if (params.get("register") === "1") setMode("register");
@@ -125,25 +123,20 @@ export default function LoginPage() {
         if (sessionData?.session) {
           const { profile, error: profileError } = await getMyProfile();
           if (!alive) return;
-          if (profileError) {
-            setError(mapError(profileError, lang));
-            return;
-          }
+          if (profileError) return setError(mapError(profileError, lang));
           if (isBlocked(profile)) {
             await db.auth.signOut();
-            setError(t.banned);
+            if (alive) setError(t.banned);
             return;
           }
-          location.replace("/messenger/");
+          window.location.replace("/messenger/");
         }
       } catch (err) {
         if (alive) setError(mapError(err, lang));
       }
     })();
 
-    return () => {
-      alive = false;
-    };
+    return () => { alive = false; };
   }, []);
 
   useEffect(() => {
@@ -151,36 +144,40 @@ export default function LoginPage() {
       localStorage.setItem("utino-language", lang);
       localStorage.setItem("utino-theme", dark ? "dark" : "light");
       document.documentElement.dataset.theme = dark ? "dark" : "light";
+      document.documentElement.lang = lang === "fa" ? "fa" : "en";
+      document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
     } catch {}
   }, [lang, dark]);
+
+  async function finishLogin(usernameValue, passwordValue) {
+    const { error: authError } = await db.auth.signInWithPassword({ email: emailFor(usernameValue), password: passwordValue });
+    if (authError) {
+      const raw = String(authError.message || "").toLowerCase();
+      throw new Error(raw.includes("fetch") || raw.includes("network") ? "network" : "invalid_credentials");
+    }
+    const { profile, error: profileError } = await getMyProfile();
+    if (profileError) throw profileError;
+    if (isBlocked(profile)) {
+      await db.auth.signOut();
+      throw new Error("banned");
+    }
+  }
 
   async function login(event) {
     event.preventDefault();
     if (busy) return;
     setError("");
     const u = username.trim().toLowerCase();
-    if (!/^[a-z0-9_]{3,20}$/.test(u)) return setError(t.invalidUser);
+    if (!USERNAME_RE.test(u)) return setError(t.invalidUser);
     if (password.length < 6 || password.length > 128) return setError(t.invalidPassword);
     setBusy(true);
     try {
-      const { error: authError } = await db.auth.signInWithPassword({ email: emailFor(u), password });
-      if (authError) {
-        setError(String(authError.message || "").toLowerCase().includes("fetch") ? mapError("network", lang) : t.invalidCredentials);
-        return;
-      }
-      const { profile, error: profileError } = await getMyProfile();
-      if (profileError) {
-        setError(mapError(profileError, lang));
-        return;
-      }
-      if (isBlocked(profile)) {
-        await db.auth.signOut();
-        setError(t.banned);
-        return;
-      }
-      location.replace("/messenger/");
+      await finishLogin(u, password);
+      window.location.replace("/messenger/");
     } catch (err) {
-      setError(mapError(err, lang));
+      if (err?.message === "banned") setError(t.banned);
+      else if (err?.message === "invalid_credentials") setError(t.invalidCredentials);
+      else setError(mapError(err, lang));
     } finally {
       setBusy(false);
     }
@@ -193,7 +190,7 @@ export default function LoginPage() {
     const u = username.trim().toLowerCase();
     const d = display.trim();
     if (!registrationEnabled) return setError(t.disabled);
-    if (!/^[a-z0-9_]{3,20}$/.test(u)) return setError(t.invalidUser);
+    if (!USERNAME_RE.test(u)) return setError(t.invalidUser);
     if (!d || d.length > 80) return setError(t.invalidDisplay);
     if (password.length < 6 || password.length > 128) return setError(t.invalidPassword);
     if (password !== confirm) return setError(t.mismatch);
@@ -202,20 +199,10 @@ export default function LoginPage() {
       const { data, error: invokeError } = await db.functions.invoke("public-register", {
         body: { username: u, display_name: d, password },
       });
-      if (invokeError) {
-        setError(mapError(invokeError, lang));
-        return;
-      }
-      if (!data?.ok) {
-        setError(mapError(data?.error || "server_error", lang));
-        return;
-      }
-      const { error: loginError } = await db.auth.signInWithPassword({ email: emailFor(u), password });
-      if (loginError) {
-        setError(mapError(loginError, lang));
-        return;
-      }
-      location.replace("/messenger/");
+      if (invokeError) throw invokeError;
+      if (!data?.ok) throw new Error(data?.error || "server_error");
+      await finishLogin(u, password);
+      window.location.replace("/messenger/");
     } catch (err) {
       setError(mapError(err, lang));
     } finally {
@@ -223,91 +210,37 @@ export default function LoginPage() {
     }
   }
 
-  const rootClass = `auth-page platform-page ${dark ? "theme-dark" : "theme-light"}`;
-
   return (
-    <main className={rootClass} dir={lang === "fa" ? "rtl" : "ltr"}>
-      <div className="auth-orbit" aria-hidden="true" />
+    <main className="auth-page platform-page" dir={lang === "fa" ? "rtl" : "ltr"}>
       <section className="auth-card">
         <header className="auth-head">
-          <a className="auth-back" href="/" aria-label="Back">‹</a>
+          <a className="auth-back" href="/" aria-label={lang === "fa" ? "بازگشت" : "Back"}>‹</a>
           <div className="brand-lockup">
             <div className="brand-mark">U</div>
-            <div className="brand-copy">
-              <strong>UTINOCHATV1</strong>
-              <span>{t.tag}</span>
-            </div>
+            <div className="brand-copy"><strong>UTINOCHATV1</strong><span>{t.tag}</span></div>
           </div>
           <div className="auth-actions">
-            <button className="utino-control" type="button" onClick={() => setLang((v) => (v === "fa" ? "en" : "fa"))}>{lang === "fa" ? "EN" : "فا"}</button>
-            <button className="utino-control" type="button" onClick={() => setDark((v) => !v)}>{dark ? "☀" : "☾"}</button>
+            <button className="utino-control" type="button" onClick={() => setLang((v) => v === "fa" ? "en" : "fa")} aria-label="language">{lang === "fa" ? "EN" : "فا"}</button>
+            <button className="utino-control" type="button" onClick={() => setDark((v) => !v)} aria-label="theme">{dark ? "☀" : "☾"}</button>
           </div>
         </header>
 
-        <div className="auth-title">
-          <span>SECURE ACCESS</span>
-          <h1>{mode === "login" ? t.login : t.register}</h1>
-        </div>
+        <div className="auth-title"><span>SECURE ACCESS</span><h1>{mode === "login" ? t.login : t.register}</h1></div>
 
-        <form className="auth-form" onSubmit={mode === "login" ? login : register}>
-          <label>
-            <span>{t.username}</span>
-            <input required name="username" value={username} onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())} autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={20} placeholder="username" />
-          </label>
-          {mode === "register" && (
-            <label>
-              <span>{t.display}</span>
-              <input required name="display_name" value={display} onChange={(e) => setDisplay(e.target.value)} autoComplete="name" maxLength={80} />
-            </label>
-          )}
-          <label>
-            <span>{t.password}</span>
-            <div className="password-field">
-              <input required name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={6} maxLength={128} />
-              <button type="button" onClick={() => setShowPassword((v) => !v)}>{showPassword ? t.hide : t.show}</button>
-            </div>
-          </label>
-          {mode === "register" && (
-            <label>
-              <span>{t.confirm}</span>
-              <input required type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} minLength={6} maxLength={128} autoComplete="new-password" />
-            </label>
-          )}
+        <form className="auth-form" onSubmit={mode === "login" ? login : register} noValidate>
+          <label><span>{t.username}</span><input required name="username" value={username} onChange={(e) => setUsername(e.target.value.replace(/\s/g, "").toLowerCase())} autoComplete="username" autoCapitalize="none" spellCheck={false} maxLength={20} placeholder="username" /></label>
+          {mode === "register" && <label><span>{t.display}</span><input required name="display_name" value={display} onChange={(e) => setDisplay(e.target.value)} autoComplete="name" maxLength={80} /></label>}
+          <label><span>{t.password}</span><div className="password-field"><input required name="password" type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} autoComplete={mode === "login" ? "current-password" : "new-password"} minLength={6} maxLength={128} /><button type="button" onClick={() => setShowPassword((v) => !v)}>{showPassword ? t.hide : t.show}</button></div></label>
+          {mode === "register" && <label><span>{t.confirm}</span><input required type="password" value={confirm} onChange={(e) => setConfirm(e.target.value)} minLength={6} maxLength={128} autoComplete="new-password" /></label>}
           {error && <div className="auth-error" role="alert" aria-live="polite">{error}</div>}
-          <button className="auth-submit utino-primary" type="submit" disabled={busy || (mode === "register" && !registrationEnabled)}>
-            {busy ? t.busy : mode === "login" ? t.signIn : t.signUp}
-          </button>
+          <button className="auth-submit utino-primary" type="submit" disabled={busy || (mode === "register" && !registrationEnabled)}>{busy ? t.busy : mode === "login" ? t.signIn : t.signUp}</button>
         </form>
 
-        <button className="auth-switch" type="button" disabled={busy} onClick={() => { setMode((v) => (v === "login" ? "register" : "login")); setError(""); }}>
-          {mode === "login" ? t.switchReg : t.switchLogin}
-        </button>
-
-        <button className="auth-support" type="button" onClick={() => setSupportOpen(true)}>
-          <span className="support-avatar">✓</span>
-          <span className="support-copy"><strong>{t.support}</strong><small>{t.supportHandle} ✓</small><em>{t.supportText}</em></span>
-          <span className="support-arrow">›</span>
-        </button>
+        <button className="auth-switch" type="button" disabled={busy} onClick={() => { setMode((v) => v === "login" ? "register" : "login"); setError(""); }}>{mode === "login" ? t.switchReg : t.switchLogin}</button>
+        <button className="auth-support" type="button" onClick={() => setSupportOpen(true)}><span className="support-avatar">✓</span><span className="support-copy"><strong>{t.support}</strong><small>{t.supportHandle} ✓</small><em>{t.supportText}</em></span><span className="support-arrow">›</span></button>
       </section>
 
-      {supportOpen && (
-        <div className="auth-overlay" onMouseDown={(e) => e.target === e.currentTarget && setSupportOpen(false)}>
-          <section className="auth-modal" role="dialog" aria-modal="true" aria-label={t.support}>
-            <div className="modal-head">
-              <div><span className="modal-kicker">UTINOCHATV1</span><h2>{t.support} ✓</h2><small>{t.supportHandle}</small></div>
-              <button type="button" onClick={() => setSupportOpen(false)} aria-label="close">×</button>
-            </div>
-            <p>{t.supportText}</p>
-            <div className="support-links">
-              <a href={SUPPORT.telegram} target="_blank" rel="noreferrer">{t.telegram}</a>
-              <a href={SUPPORT.web} target="_blank" rel="noreferrer">{t.utinoSupport}</a>
-              <a href={SUPPORT.utino} target="_blank" rel="noreferrer">{t.utinoSite}</a>
-              <a href={SUPPORT.wdner} target="_blank" rel="noreferrer">{t.wdner}</a>
-              <a href={SUPPORT.iparham} target="_blank" rel="noreferrer">{t.iparham}</a>
-            </div>
-          </section>
-        </div>
-      )}
+      {supportOpen && <div className="auth-overlay" onMouseDown={(e) => e.target === e.currentTarget && setSupportOpen(false)}><section className="auth-modal" role="dialog" aria-modal="true" aria-label={t.support}><div className="modal-head"><div><span className="modal-kicker">UTINOCHATV1</span><h2>{t.support} ✓</h2><small>{t.supportHandle}</small></div><button type="button" onClick={() => setSupportOpen(false)} aria-label="close">×</button></div><p>{t.supportText}</p><div className="support-links"><a href={SUPPORT.telegram} target="_blank" rel="noreferrer">{t.telegram}</a><a href={SUPPORT.web} target="_blank" rel="noreferrer">{t.utinoSupport}</a><a href={SUPPORT.utino} target="_blank" rel="noreferrer">{t.utinoSite}</a><a href={SUPPORT.wdner} target="_blank" rel="noreferrer">{t.wdner}</a><a href={SUPPORT.iparham} target="_blank" rel="noreferrer">{t.iparham}</a></div></section></div>}
     </main>
   );
 }
