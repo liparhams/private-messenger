@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { createClient } from "@supabase/supabase-js";
+import "./support-chat.css";
 const db=createClient("https://jcblfgrcsgbdeamogzfc.supabase.co","sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K",{auth:{persistSession:true,autoRefreshToken:true}});
 export default function SupportChat({onClose}){
  const[chat,setChat]=useState(null),[messages,setMessages]=useState([]),[text,setText]=useState(""),[busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[error,setError]=useState("");
