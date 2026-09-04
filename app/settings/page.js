@@ -20,6 +20,10 @@ function Badge({ value }) {
   return value && value !== "none" ? <span className={`settings-badge settings-badge-${value}`} aria-label="نشان تأیید"><Icon name="check" size={12} /></span> : null;
 }
 
+function go(path) {
+  if (typeof window !== "undefined") window.location.assign(path);
+}
+
 export default function SettingsPage() {
   const [profile, setProfile] = useState(null);
   const [name, setName] = useState("");
@@ -32,45 +36,97 @@ export default function SettingsPage() {
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data: sessionData, error: sessionError } = await db.auth.getSession();
-    if (sessionError || !sessionData.session) { location.href = "/"; return; }
-    const { data, error: profileError } = await db.rpc("get_my_profile");
-    if (profileError) { setError(mapError(profileError, "fa")); setLoading(false); return; }
-    const next = Array.isArray(data) ? data[0] || null : data || null;
-    if (!next) { setError("پروفایل پیدا نشد."); setLoading(false); return; }
-    setProfile(next); setName(next.display_name || ""); setBio(next.bio || ""); setLoading(false);
+    setError("");
+    try {
+      const { data: sessionData, error: sessionError } = await db.auth.getSession();
+      if (sessionError) throw sessionError;
+      if (!sessionData?.session) {
+        go("/");
+        return;
+      }
+
+      const { data, error: profileError } = await db.rpc("get_my_profile");
+      if (profileError) throw profileError;
+
+      const next = Array.isArray(data) ? data[0] || null : data || null;
+      if (!next) {
+        setError("پروفایل پیدا نشد.");
+        return;
+      }
+
+      setProfile(next);
+      setName(next.display_name || "");
+      setBio(next.bio || "");
+    } catch (cause) {
+      setError(mapError(cause, "fa") || "خطا در دریافت تنظیمات.");
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    try { const saved = localStorage.getItem("utino-theme"); const next = saved === "light" ? "light" : "dark"; setTheme(next); document.documentElement.dataset.theme = next; } catch {}
-    load();
+    try {
+      const saved = localStorage.getItem("utino-theme");
+      const next = saved === "light" ? "light" : "dark";
+      setTheme(next);
+      document.documentElement.dataset.theme = next;
+    } catch {}
+    void load();
   }, [load]);
 
   function changeTheme(next) {
     setTheme(next);
-    try { localStorage.setItem("utino-theme", next); document.documentElement.dataset.theme = next; } catch {}
+    try {
+      localStorage.setItem("utino-theme", next);
+      document.documentElement.dataset.theme = next;
+    } catch {}
     window.dispatchEvent(new CustomEvent("utino-theme-change", { detail: next === "dark" }));
   }
 
   async function save(event) {
     event.preventDefault();
-    const cleanName = name.trim(); const cleanBio = bio.trim();
-    if (!cleanName || cleanName.length > 80) { setError(mapError("invalid_display_name", "fa")); return; }
-    if (cleanBio.length > 160) { setError("بیو باید حداکثر ۱۶۰ کاراکتر باشد."); return; }
+    const cleanName = name.trim();
+    const cleanBio = bio.trim();
+    if (!cleanName || cleanName.length > 80) {
+      setError(mapError("invalid_display_name", "fa"));
+      return;
+    }
+    if (cleanBio.length > 160) {
+      setError("بیو باید حداکثر ۱۶۰ کاراکتر باشد.");
+      return;
+    }
     if (saving) return;
-    setSaving(true); setError(""); setMessage("");
-    const { data, error: saveError } = await db.rpc("update_my_profile", { new_display_name: cleanName, new_bio: cleanBio });
-    if (saveError) { setError(mapError(saveError, "fa")); setSaving(false); return; }
-    const next = Array.isArray(data) ? data[0] || null : data || null;
-    if (next) setProfile(next);
-    setMessage("پروفایل با موفقیت ذخیره شد."); setSaving(false);
+
+    setSaving(true);
+    setError("");
+    setMessage("");
+    try {
+      const { data, error: saveError } = await db.rpc("update_my_profile", {
+        new_display_name: cleanName,
+        new_bio: cleanBio,
+      });
+      if (saveError) throw saveError;
+
+      const next = Array.isArray(data) ? data[0] || null : data || null;
+      if (next) setProfile(next);
+      setMessage("پروفایل با موفقیت ذخیره شد.");
+    } catch (cause) {
+      setError(mapError(cause, "fa") || "خطا در ذخیره پروفایل.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function logout() {
     if (saving) return;
-    const { error: logoutError } = await db.auth.signOut();
-    if (logoutError) { setError(mapError(logoutError, "fa")); return; }
-    location.href = "/";
+    setError("");
+    try {
+      const { error: logoutError } = await db.auth.signOut();
+      if (logoutError) throw logoutError;
+      go("/");
+    } catch (cause) {
+      setError(mapError(cause, "fa") || "خطا در خروج از حساب.");
+    }
   }
 
   if (loading) return <main className="settings-page" dir="rtl"><div className="settings-loading"><span className="settings-spinner" />در حال آماده‌سازی تنظیمات…</div></main>;
@@ -120,8 +176,8 @@ export default function SettingsPage() {
         <section className="settings-card">
           <div className="settings-section-title"><div><strong>پشتیبانی و دسترسی</strong><span>راه‌های ارتباطی و بخش‌های حساب</span></div><Icon name="support" size={19} animated /></div>
           <div className="settings-links">
-            <button type="button" onClick={() => location.href = "/messenger/?support=1"}><span className="settings-link-icon"><Icon name="support" size={17} animated /></span><span><b>گفتگوی پشتیبانی</b><small>ارتباط مستقیم با تیم پشتیبانی</small></span><Icon name="chevron" size={16} /></button>
-            {profile.role === "admin" && <button type="button" onClick={() => location.href = "/admin/"}><span className="settings-link-icon"><Icon name="shield" size={17} animated /></span><span><b>پنل مدیریت</b><small>مدیریت و نظارت بر سرویس</small></span><Icon name="chevron" size={16} /></button>}
+            <button type="button" onClick={() => go("/messenger/?support=1")}><span className="settings-link-icon"><Icon name="support" size={17} animated /></span><span><b>گفتگوی پشتیبانی</b><small>ارتباط مستقیم با تیم پشتیبانی</small></span><Icon name="chevron" size={16} /></button>
+            {profile.role === "admin" && <button type="button" onClick={() => go("/admin/")}><span className="settings-link-icon"><Icon name="shield" size={17} animated /></span><span><b>پنل مدیریت</b><small>مدیریت و نظارت بر سرویس</small></span><Icon name="chevron" size={16} /></button>}
             {SUPPORT_LINKS.map(([label, href, icon]) => <a key={href} href={href} target="_blank" rel="noreferrer"><span className="settings-link-icon"><Icon name={icon} size={17} animated /></span><span><b>{label}</b><small>باز کردن در صفحه جدید</small></span><Icon name="arrow" size={16} /></a>)}
           </div>
         </section>
