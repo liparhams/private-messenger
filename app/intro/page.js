@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import "../utino-platform.css";
+import "../utino-system.css";
 import "./intro.css";
 
 const copy={fa:{navLogin:"ورود",navRegister:"ثبت‌نام",badge:"نسخه UTINOCHATV1",title:<>پیام‌رسانی ساده،<br/>خصوصی و سریع.</>,text:"یک فضای مدرن برای گفت‌وگوی مستقیم، گروه‌ها و کانال‌ها، با تمرکز روی تجربه کاربری تمیز و کنترل بیشتر روی حساب و گفتگوها.",start:"شروع استفاده",learn:"ویژگی‌ها",privateTitle:"گفت‌وگوی خصوصی",privateText:"پیام‌های مستقیم با تجربه‌ای خلوت و بدون شلوغی اضافه.",groupsTitle:"گروه و کانال",groupsText:"گفت‌وگوهای گروهی و کانال‌های عمومی را در یک فضای یکپارچه مدیریت کن.",supportTitle:"پشتیبانی رسمی",supportText:"در صورت نیاز، ارتباط با پشتیبانی رسمی در دسترس است.",footer:"UTINOCHATV1 • پیام‌رسان یوتینو"},en:{navLogin:"Sign in",navRegister:"Create account",badge:"UTINOCHATV1",title:<>Simple, private,<br/>modern messaging.</>,text:"A clean space for direct messages, groups and channels, built around a focused experience and more control over your account and conversations.",start:"Get started",learn:"Features",privateTitle:"Private chats",privateText:"Direct conversations with a focused interface and less clutter.",groupsTitle:"Groups & channels",groupsText:"Manage group conversations and public channels in one connected space.",supportTitle:"Official support",supportText:"Official support is available whenever you need help.",footer:"UTINOCHATV1 • Utino Messenger"}};
