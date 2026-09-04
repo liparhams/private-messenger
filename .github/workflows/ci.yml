@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: UTINOCHATV1 Build and Deploy
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: messenger-${{ github.ref }}
+  group: utinochatv1-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -20,24 +20,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
-
       - name: Install dependencies
         run: npm install --no-audit --no-fund --prefer-offline
-
-      - name: Apply Utino UI patches
-        run: node scripts/apply-utino-patches.mjs
-
-      - name: Finalize UTINOCHATV1 release UI
+      - name: Finalize UTINOCHATV1 source
         run: node scripts/finalize-utino.mjs
-
       - name: Production build
         run: npm run build
-
       - name: Verify static export
         shell: bash
         run: |
@@ -47,14 +39,12 @@ jobs:
           test -d out/_next/static
           grep -q "UTINOCHATV1" out/index.html
           test "$(find out -type f | wc -l)" -gt 10
-
-      - name: Validate Cloudflare deployment package
+      - name: Validate Cloudflare package
         run: npx wrangler deploy --dry-run
-
       - name: Upload validated build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: messenger-static-export
+          name: utinochatv1-static-export
           path: out
           if-no-files-found: error
           retention-days: 3
@@ -67,21 +57,17 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
-
       - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: 22
-
       - name: Install dependencies
         run: npm install --no-audit --no-fund --prefer-offline
-
       - name: Download validated build artifact
         uses: actions/download-artifact@v4
         with:
-          name: messenger-static-export
+          name: utinochatv1-static-export
           path: out
-
       - name: Verify deployment artifact
         shell: bash
         run: |
@@ -90,7 +76,6 @@ jobs:
           test -f out/404.html
           test -d out/_next/static
           grep -q "UTINOCHATV1" out/index.html
-
       - name: Deploy exact validated artifact to Cloudflare Workers
         run: npx wrangler deploy
         env:
