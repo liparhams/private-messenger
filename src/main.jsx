@@ -1,357 +1,49 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import {
-  ArrowLeft, Bell, CheckCheck, ChevronDown, Hash, LogOut, Menu, MessageCircle,
-  Moon, MoreVertical, Paperclip, Plus, Search, Send, Settings, Smile, Sun,
-  Users, Video, Phone, X, Archive, Edit3, Zap
-} from 'lucide-react';
+import { Archive, ArrowLeft, Bell, Check, CheckCheck, Menu, MessageCircle, Moon, MoreVertical, Paperclip, Phone, Plus, Search, Send, Settings, Smile, Sun, Users, Video, X, Zap } from 'lucide-react';
 import { supabase } from './lib/supabase.js';
 import './styles.css';
 
-const FEATURE_CARDS = [
-  ['سریع', 'پیام‌ها با رابطی سبک و روان'],
-  ['همگام', 'گفت‌وگوها روی دستگاه‌های شما'],
-  ['قدرتمند', 'گروه، کانال و رسانه در یک فضا'],
-  ['باز', 'ساخته‌شده با فناوری‌های متن‌باز']
-];
+const time = v => v ? new Intl.DateTimeFormat('fa-IR',{hour:'2-digit',minute:'2-digit'}).format(new Date(v)) : '';
+const date = v => v ? new Intl.DateTimeFormat('fa-IR',{day:'numeric',month:'long'}).format(new Date(v)) : '';
+const initial = v => String(v || 'u').trim().slice(0,1).toUpperCase() || 'U';
 
-function formatTime(value) {
-  if (!value) return '';
-  return new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit' }).format(new Date(value));
-}
+function Avatar({value,small=false}) { return <span className={`avatar ${small?'small':''}`}>{initial(value)}</span>; }
 
-function formatDate(value) {
-  if (!value) return '';
-  return new Intl.DateTimeFormat('fa-IR', { day: 'numeric', month: 'long' }).format(new Date(value));
-}
-
-function initials(value) {
-  const text = String(value || 'U').trim();
-  return text.slice(0, 1).toUpperCase() || 'U';
-}
-
-function Avatar({ text, small = false, className = '' }) {
-  return <div className={`avatar ${small ? 'avatar-small' : ''} ${className}`}>{initials(text)}</div>;
-}
-
-function Splash() {
-  return <div className="splash"><div className="splash-logo">U</div><div className="loader"/><strong>utino</strong></div>;
-}
-
-function Landing({ onStart, onLogin }) {
-  return <main className="landing">
-    <nav className="landing-nav">
-      <div className="brand"><span className="brand-logo">U</span><span>utino</span></div>
-      <div className="landing-actions"><button className="nav-link" onClick={onLogin}>ورود</button><button className="nav-button" onClick={onStart}>شروع</button></div>
-    </nav>
-    <section className="hero">
-      <div className="hero-copy">
-        <div className="eyebrow"><Zap size={15}/> پیام‌رسان مدرن برای همه دستگاه‌ها</div>
-        <h1>پیام‌رسانی،<br/><span>ساده و سریع.</span></h1>
-        <p>utino یک پیام‌رسان ابری، سریع و چندسکویی است. گفت‌وگوهای شخصی، گروه‌ها و کانال‌ها را در یک تجربه تمیز و آشنا داشته باش.</p>
-        <div className="hero-actions"><button className="primary-cta" onClick={onStart}>شروع کنید <ArrowLeft size={18}/></button><button className="secondary-cta" onClick={onLogin}>ورود به utino</button></div>
-        <div className="hero-note"><span className="pulse-dot"/> ساخته‌شده برای وب، موبایل و دسکتاپ</div>
-      </div>
-      <div className="hero-visual">
-        <div className="phone-glow"/>
-        <div className="preview-window">
-          <div className="preview-head"><Avatar text="U" small/><div><b>utino</b><small>آنلاین</small></div><MoreVertical size={18}/></div>
-          <div className="preview-body">
-            <div className="bubble incoming">سلام 👋<span>12:41</span></div>
-            <div className="bubble outgoing">خوش اومدی به utino <span>12:42 ✓✓</span></div>
-            <div className="bubble incoming">ساده، سریع و مرتب.</div>
-            <div className="typing"><i/><i/><i/></div>
-          </div>
-          <div className="preview-composer"><Smile size={18}/><span>پیام...</span><Send size={18}/></div>
-        </div>
-      </div>
-    </section>
-    <section className="features">
-      {FEATURE_CARDS.map(([title, text]) => <article key={title}><div className="feature-icon"><CheckCheck size={19}/></div><div><b>{title}</b><p>{text}</p></div></article>)}
-    </section>
-    <section className="platform-section"><div><span className="eyebrow">یک حساب، همه‌جا</span><h2>همه‌چیز همان‌جایی است که رهایش کردی.</h2><p>رابط واکنش‌گرا، حالت تاریک، جست‌وجو، گروه‌ها و کانال‌ها، پیام‌رسانی زنده و تجربه‌ای طراحی‌شده برای صفحه‌های کوچک و بزرگ.</p></div><div className="platform-grid"><span>Web</span><span>Desktop</span><span>Mobile</span><span>PWA</span></div></section>
-    <footer className="landing-footer"><span>© utino</span><span>سریع · ساده · همگام</span></footer>
-  </main>;
-}
-
-function Auth({ mode, setMode, email, setEmail, password, setPassword, displayName, setDisplayName, username, setUsername, onSubmit, error, notice, busy }) {
-  return <main className="auth-page">
-    <div className="auth-brand"><span className="brand-logo">U</span><span>utino</span></div>
-    <section className="auth-card">
-      <div className="auth-mark">{mode === 'login' ? '↗' : '+'}</div>
-      <h1>{mode === 'login' ? 'خوش برگشتی' : 'ساخت حساب'}</h1>
-      <p>{mode === 'login' ? 'برای ادامه وارد حساب utino شو.' : 'چند ثانیه تا ورود به utino فاصله داری.'}</p>
-      <form onSubmit={onSubmit}>
-        {mode === 'signup' && <>
-          <label>نام نمایشی<input required value={displayName} onChange={e => setDisplayName(e.target.value)} placeholder="نام شما" autoComplete="name"/></label>
-          <label>نام کاربری<input required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]+" value={username} onChange={e => setUsername(e.target.value)} placeholder="username" autoComplete="username"/></label>
-        </>}
-        <label>ایمیل<input required type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email"/></label>
-        <label>رمز عبور<input required minLength={6} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="حداقل ۶ کاراکتر" autoComplete={mode === 'login' ? 'current-password' : 'new-password'}/></label>
-        {error && <div className="form-error">{error}</div>}
-        {notice && <div className="form-notice">{notice}</div>}
-        <button className="auth-submit" disabled={busy}>{busy ? <span className="button-loader"/> : mode === 'login' ? 'ورود' : 'ثبت‌نام'}</button>
-      </form>
-      <button className="switch-auth" onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}>{mode === 'login' ? 'حساب نداری؟ ثبت‌نام کن' : 'قبلاً حساب ساخته‌ای؟ وارد شو'}</button>
-    </section>
-    <button className="back-home" onClick={() => history.pushState({}, '', '/')}><ArrowLeft size={16}/> صفحه اصلی</button>
-  </main>;
-}
-
-function EmptyList({ icon, title, text }) {
-  return <div className="empty-list"><div className="empty-icon">{icon}</div><b>{title}</b><p>{text}</p></div>;
-}
-
-function ChatRow({ chat, selected, onClick }) {
-  return <button className={`chat-row ${selected ? 'selected' : ''}`} onClick={onClick}>
-    <Avatar text={chat.avatar || chat.title}/><span className="chat-row-main"><b>{chat.title || 'گفت‌وگو'}</b><small>{chat.last || 'پیام جدید'}</small></span><span className="chat-row-meta"><small>{chat.time}</small>{chat.unread > 0 && <em>{chat.unread}</em>}</span>
-  </button>;
-}
-
-function Messenger({ session, profile, setProfile, dark, setDark, onLogout }) {
-  const [query, setQuery] = useState('');
-  const [tab, setTab] = useState('chats');
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [chats, setChats] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [text, setText] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [createOpen, setCreateOpen] = useState(false);
-  const [createKind, setCreateKind] = useState('group');
-  const [createTitle, setCreateTitle] = useState('');
-  const [createDescription, setCreateDescription] = useState('');
-  const [createUsername, setCreateUsername] = useState('');
-  const [people, setPeople] = useState([]);
-  const [communities, setCommunities] = useState([]);
-  const [notice, setNotice] = useState('');
-  const [error, setError] = useState('');
-  const bottomRef = useRef(null);
-
-  const loadChats = async () => {
-    const { data: members, error: memberError } = await supabase.from('conversation_members').select('conversation_id').eq('user_id', session.user.id).is('left_at', null);
-    if (memberError) { setError(memberError.message); return []; }
-    const ids = [...new Set((members || []).map(x => x.conversation_id))];
-    if (!ids.length) { setChats([]); setSelected(null); return []; }
-    const { data, error: chatError } = await supabase.from('conversations').select('*').in('id', ids).order('created_at', { ascending: false });
-    if (chatError) { setError(chatError.message); return []; }
-    const list = (data || []).map(c => ({ ...c, avatar: c.is_channel ? '#' : c.type === 'group' ? 'G' : c.title, last: c.description || (c.is_channel ? 'کانال' : c.type === 'group' ? 'گروه' : 'گفت‌وگوی خصوصی'), time: formatTime(c.created_at), unread: 0 }));
-    setChats(list);
-    setSelected(current => current && list.some(c => c.id === current.id) ? list.find(c => c.id === current.id) : list[0] || null);
-    return list;
-  };
-
-  const loadMessages = async (id) => {
-    setLoading(true); setError('');
-    const { data, error: readError } = await supabase.from('messages').select('*').eq('conversation_id', id).is('deleted_at', null).order('created_at', { ascending: true }).limit(300);
-    if (readError) setError(readError.message); else setMessages(data || []);
-    setLoading(false);
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }));
-  };
-
-  useEffect(() => { loadChats(); }, [session.user.id]);
-  useEffect(() => { if (selected?.id) loadMessages(selected.id); else setMessages([]); }, [selected?.id]);
-
-  useEffect(() => {
-    const channel = supabase.channel(`utino-messages-${session.user.id}`).on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-      const row = payload.new;
-      if (!row?.id) return;
-      if (row.conversation_id === selected?.id) {
-        setMessages(old => old.some(m => m.id === row.id) ? old : [...old, row]);
-        requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }));
-      }
-      setChats(old => old.map(c => c.id === row.conversation_id ? { ...c, last: row.content || 'رسانه', time: formatTime(row.created_at) } : c));
-    }).subscribe();
-    return () => { supabase.removeChannel(channel); };
-  }, [session.user.id, selected?.id]);
-
-  useEffect(() => {
-    if (!query.trim()) { setPeople([]); setCommunities([]); return; }
-    const timer = setTimeout(async () => {
-      const [{ data: p }, { data: c }] = await Promise.all([
-        supabase.rpc('search_user_directory', { search_text: query.trim(), result_limit: 20 }),
-        supabase.rpc('search_public_channels', { search_text: query.trim() })
-      ]);
-      setPeople(p || []); setCommunities(c || []);
-    }, 250);
-    return () => clearTimeout(timer);
-  }, [query]);
-
-  useEffect(() => {
-    if (!notice) return;
-    const t = setTimeout(() => setNotice(''), 2800);
-    return () => clearTimeout(t);
-  }, [notice]);
-
-  const filteredChats = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return q ? chats.filter(c => `${c.title || ''} ${c.description || ''}`.toLowerCase().includes(q)) : chats;
-  }, [chats, query]);
-
-  async function sendMessage(e) {
-    e?.preventDefault();
-    const content = text.trim();
-    if (!content || !selected || busy) return;
-    setBusy(true); setError(''); setText('');
-    const { data, error: sendError } = await supabase.from('messages').insert({ sender_id: session.user.id, conversation_id: selected.id, content, message_type: 'text' }).select().single();
-    if (sendError) { setError(sendError.message); setText(content); } else if (data) setMessages(old => old.some(m => m.id === data.id) ? old : [...old, data]);
-    setBusy(false);
-    requestAnimationFrame(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }));
-  }
-
-  async function openPerson(person) {
-    setError('');
-    const { data, error: rpcError } = await supabase.rpc('get_or_create_direct_conversation', { other_user_id: person.id });
-    if (rpcError) { setError(rpcError.message); return; }
-    const id = Array.isArray(data) ? data[0] : data;
-    const list = await loadChats();
-    const next = list.find(c => c.id === id);
-    if (next) setSelected(next);
-    setTab('chats'); setQuery(''); setMobileOpen(true);
-  }
-
-  async function createConversation(e) {
-    e.preventDefault();
-    if (!createTitle.trim()) return;
-    setError('');
-    const { data, error: createError } = await supabase.rpc('create_conversation', {
-      p_kind: createKind,
-      p_title: createTitle.trim(),
-      p_description: createDescription.trim(),
-      p_is_public: createKind === 'channel',
-      p_username: createKind === 'channel' ? createUsername.trim() || null : null,
-      p_member_ids: []
-    });
-    if (createError) { setError(createError.message); return; }
-    const createdId = Array.isArray(data) ? data[0] : data;
-    const list = await loadChats();
-    const created = list.find(c => c.id === createdId);
-    if (created) { setSelected(created); setMobileOpen(true); }
-    setCreateOpen(false); setCreateTitle(''); setCreateDescription(''); setCreateUsername(''); setNotice(createKind === 'channel' ? 'کانال ساخته شد.' : 'گروه ساخته شد.');
-  }
-
-  async function joinCommunity(id) {
-    const { error: joinError } = await supabase.rpc('join_conversation', { p_conversation_id: id });
-    if (joinError) setError(joinError.message); else { const list = await loadChats(); const joined = list.find(c => c.id === id); if (joined) { setSelected(joined); setMobileOpen(true); } setTab('chats'); setQuery(''); setNotice('به کانال پیوستی.'); }
-  }
-
-  return <div className={`messenger-shell ${mobileOpen ? 'mobile-open' : ''}`}>
-    <aside className="chat-sidebar">
-      <header className="chat-sidebar-head">
-        <button className="round-icon" onClick={() => setMenuOpen(v => !v)} aria-label="منو"><Menu size={20}/></button>
-        <div className="brand compact"><span className="brand-logo">U</span><span>utino</span></div>
-        <button className="round-icon" onClick={() => setDark(v => !v)} aria-label="تم">{dark ? <Sun size={18}/> : <Moon size={18}/>}</button>
-      </header>
-      {menuOpen && <div className="menu-card">
-        <button onClick={() => { setSettingsOpen(true); setMenuOpen(false); }}><Settings size={17}/> تنظیمات</button>
-        <button onClick={() => { setTab('contacts'); setMenuOpen(false); }}><Users size={17}/> مخاطبین</button>
-        <button onClick={() => { setTab('communities'); setMenuOpen(false); }}><Hash size={17}/> کانال‌ها</button>
-        <button onClick={onLogout}><LogOut size={17}/> خروج</button>
-      </div>}
-      <div className="search-field"><Search size={18}/><input value={query} onChange={e => setQuery(e.target.value)} placeholder="جست‌وجو"/></div>
-      <div className="tabs"><button className={tab === 'chats' ? 'active' : ''} onClick={() => setTab('chats')}>همه</button><button className={tab === 'contacts' ? 'active' : ''} onClick={() => setTab('contacts')}>مخاطبین</button><button className={tab === 'communities' ? 'active' : ''} onClick={() => setTab('communities')}>کانال‌ها</button></div>
-      <div className="rows">
-        {tab === 'chats' && (filteredChats.length ? filteredChats.map(c => <ChatRow key={c.id} chat={c} selected={selected?.id === c.id} onClick={() => { setSelected(c); setMobileOpen(true); }}/>) : <EmptyList icon={<MessageCircle size={22}/>} title="هنوز گفت‌وگویی نیست" text="یک کاربر را جست‌وجو کن و گفتگو را شروع کن."/>)}
-        {tab === 'contacts' && (people.length ? people.map(p => <button className="result-row" key={p.id} onClick={() => openPerson(p)}><Avatar text={p.display_name || p.username}/><span><b>{p.display_name || p.username}</b><small>@{p.username}</small></span></button>) : <EmptyList icon={<Users size={22}/>} title="مخاطبین" text="برای پیدا کردن افراد، نام یا نام کاربری را جست‌وجو کن."/>)}
-        {tab === 'communities' && (communities.length ? communities.map(c => <button className="result-row" key={c.id} onClick={() => joinCommunity(c.id)}><Avatar text="#"/><span><b>{c.title}</b><small>@{c.channel_username || 'community'} · {c.member_count || 0} عضو</small></span></button>) : <EmptyList icon={<Hash size={22}/>} title="کانال‌ها" text="نام کانال را در جست‌وجو بنویس."/>)}
-      </div>
-      <button className="new-chat-btn" onClick={() => setCreateOpen(true)}><Plus size={19}/> گفت‌وگوی جدید</button>
-      <div className="mini-profile"><Avatar text={profile?.display_name || profile?.username}/><span><b>{profile?.display_name || profile?.username || 'کاربر'}</b><small>@{profile?.username || 'user'}</small></span><button className="round-icon" onClick={() => setSettingsOpen(true)}><Settings size={17}/></button></div>
-    </aside>
-
-    <section className="chat-pane">
-      {!selected ? <div className="welcome-pane"><div className="welcome-art"><MessageCircle size={38}/></div><h2>utino</h2><p>یک گفت‌وگو را از فهرست انتخاب کن یا با جست‌وجو شروع کن.</p></div> : <>
-        <header className="chat-head">
-          <button className="mobile-back" onClick={() => setMobileOpen(false)}><ArrowLeft size={21}/></button>
-          <Avatar text={selected.avatar || selected.title}/><div className="chat-head-info"><b>{selected.title || 'گفت‌وگو'}</b><small>{selected.is_channel ? 'کانال' : selected.type === 'group' ? 'گروه' : 'آنلاین'}</small></div>
-          <div className="chat-head-actions"><button className="round-icon"><Search size={19}/></button><button className="round-icon"><Phone size={19}/></button><button className="round-icon"><Video size={19}/></button><button className="round-icon"><MoreVertical size={19}/></button></div>
-        </header>
-        <div className="message-wall">
-          {loading ? <div className="messages-loading"><span className="loader"/></div> : messages.length ? messages.map((m, index) => <React.Fragment key={m.id}><div className="date-divider">{index === 0 || formatDate(messages[index - 1]?.created_at) !== formatDate(m.created_at) ? formatDate(m.created_at) : ''}</div><div className={`message-line ${m.sender_id === session.user.id ? 'mine' : ''}`}><div className="message-bubble"><div>{m.content || 'رسانه'}</div><span>{formatTime(m.created_at)} {m.sender_id === session.user.id && <CheckCheck size={14}/>}</span></div></div></React.Fragment>) : <div className="empty-conversation"><div className="empty-icon"><MessageCircle size={25}/></div><b>شروع گفتگو</b><p>اولین پیام را بفرست.</p></div>}
-          <div ref={bottomRef}/>
-        </div>
-        <form className="composer" onSubmit={sendMessage}><button type="button" className="round-icon"><Paperclip size={20}/></button><input value={text} onChange={e => setText(e.target.value)} placeholder="پیام..."/><button type="button" className="round-icon"><Smile size={20}/></button><button className="send-btn" disabled={busy || !text.trim()}><Send size={19}/></button></form>
-      </>}
-    </section>
-
-    {notice && <div className="toast"><CheckCheck size={17}/>{notice}</div>}
-    {error && <button className="error-toast" onClick={() => setError('')}><X size={15}/>{error}</button>}
-
-    {createOpen && <Modal title="ساخت گفت‌وگوی جدید" onClose={() => setCreateOpen(false)}><form className="modal-form" onSubmit={createConversation}><div className="segmented"><button type="button" className={createKind === 'group' ? 'active' : ''} onClick={() => setCreateKind('group')}><Users size={17}/> گروه</button><button type="button" className={createKind === 'channel' ? 'active' : ''} onClick={() => setCreateKind('channel')}><Hash size={17}/> کانال</button></div><label>نام<input required value={createTitle} onChange={e => setCreateTitle(e.target.value)} placeholder={createKind === 'channel' ? 'نام کانال' : 'نام گروه'}/></label><label>توضیح<input value={createDescription} onChange={e => setCreateDescription(e.target.value)} placeholder="اختیاری"/></label>{createKind === 'channel' && <label>نام کاربری کانال<input value={createUsername} onChange={e => setCreateUsername(e.target.value.replace(/[^a-zA-Z0-9_]/g, ''))} placeholder="channel_name"/></label>}<button className="modal-primary">ساختن</button></form></Modal>}
-    {settingsOpen && <Modal title="تنظیمات" onClose={() => setSettingsOpen(false)}><div className="settings-list"><div className="settings-user"><Avatar text={profile?.display_name || profile?.username}/><div><b>{profile?.display_name || profile?.username}</b><small>@{profile?.username || 'user'}</small></div></div><button onClick={() => setDark(v => !v)}><span>{dark ? <Sun size={18}/> : <Moon size={18}/>} حالت {dark ? 'روشن' : 'تاریک'}</span><ChevronDown size={16}/></button><button onClick={onLogout}><span><LogOut size={18}/> خروج از حساب</span></button></div></Modal>}
+function Landing({go}) {
+  const features=[['ساده','همه‌چیز در جای خودش، بدون شلوغی.'],['خصوصی','حساب و گفتگو با Supabase مدیریت می‌شود.'],['همگام','تجربه‌ای یکسان روی صفحه‌های مختلف.'],['سریع','رابط سبک با پیام‌رسانی زنده.'],['قدرتمند','گفتگوی خصوصی، گروه و کانال.'],['باز','الهام‌گرفته از کلاینت‌های متن‌باز Telegram.']];
+  return <div className="site-page">
+    <header className="site-nav"><a className="logo" href="/" onClick={e=>{e.preventDefault();go('/')}}><span>u</span>tino</a><nav><a href="#features">ویژگی‌ها</a><a href="#platform">پلتفرم</a><a href="#about">درباره</a></nav><div className="nav-actions"><button className="ghost" onClick={()=>go('/login')}>ورود</button><button className="primary" onClick={()=>go('/signup')}>شروع کنید</button></div></header>
+    <main>
+      <section className="hero-site"><div className="hero-copy-site"><div className="eyebrow"><Zap size={15}/> پیام‌رسان سریع و ساده</div><h1>پیام‌رسانی<br/><span>بدون شلوغی.</span></h1><p>utino یک پیام‌رسان مستقل و چندسکویی است که تجربه‌ای تمیز، سریع و آشنا برای گفتگوهای روزمره ارائه می‌دهد.</p><div className="hero-buttons"><button className="primary large" onClick={()=>go('/signup')}>ساخت حساب <ArrowLeft size={18}/></button><button className="ghost large" onClick={()=>go('/messenger')}>باز کردن پیام‌رسان</button></div><div className="tiny-note"><i/> Web · Mobile · Desktop · PWA</div></div>
+        <div className="hero-demo"><div className="demo-window"><div className="demo-sidebar"><div className="demo-top"><b>utino</b><Menu size={18}/></div><div className="demo-search"><Search size={15}/>جست‌وجو</div>{['گفتگوی خصوصی','گروه utino','کانال اخبار'].map((x,i)=><div className={`demo-row ${i===0?'active':''}`} key={x}><Avatar value={x}/><div><b>{x}</b><small>{i===0?'سلام! 👋':'پیام جدید'}</small></div></div>)}</div><div className="demo-chat"><div className="demo-chat-head"><Avatar value="u" small/><div><b>utino</b><small>آنلاین</small></div><div className="demo-icons"><Phone size={17}/><Video size={17}/><MoreVertical size={18}/></div></div><div className="demo-messages"><div className="date-pill">امروز</div><div className="demo-bubble in">سلام 👋<small>۱۲:۴۱</small></div><div className="demo-bubble out">خوش اومدی به utino<small>۱۲:۴۲ ✓✓</small></div><div className="demo-bubble in">ساده، سریع و مرتب.<small>۱۲:۴۲</small></div><div className="typing"><i/><i/><i/></div></div><div className="demo-compose"><Smile size={18}/><span>پیام...</span><Send size={18}/></div></div></div></div>
+      </section>
+      <section id="features" className="feature-section"><div className="section-heading"><span className="eyebrow">همه‌چیز ضروری</span><h2>کمتر، اما بهتر.</h2><p>ساختار بصری از تجربه Telegram Web و الگوهای کلاینت‌های متن‌باز الهام گرفته شده است.</p></div><div className="feature-grid">{features.map(([t,d],i)=><article key={t}><span className="feature-number">0{i+1}</span><h3>{t}</h3><p>{d}</p></article>)}</div></section>
+      <section id="platform" className="platform-site"><div><span className="eyebrow">یک تجربه</span><h2>هرجا که هستی، همان utino.</h2><p>پوسته واکنش‌گرا برای دسکتاپ و موبایل، با مرکزیت گفتگو و بدون صفحه‌های اضافی.</p></div><div className="platform-pills"><span>Web</span><span>Mobile</span><span>Desktop</span><span>PWA</span></div></section>
+      <section id="about" className="about-site"><div className="about-card"><MessageCircle size={25}/><h2>ساخته‌شده برای گفتگو.</h2><p>گفتگو مرکز تجربه است.</p><button className="primary" onClick={()=>go('/messenger')}>ورود به پیام‌رسان</button></div></section>
+    </main><footer className="site-footer"><span>utino</span><span>سریع · ساده · همگام</span><span>© {new Date().getFullYear()}</span></footer>
   </div>;
 }
 
-function Modal({ title, onClose, children }) {
-  return <div className="modal-backdrop" onMouseDown={e => e.target === e.currentTarget && onClose()}><section className="modal"><header><b>{title}</b><button className="round-icon" onClick={onClose}><X size={18}/></button></header>{children}</section></div>;
+function Auth({mode,setMode,onDone}) {
+  const [email,setEmail]=useState(''),[password,setPassword]=useState(''),[name,setName]=useState(''),[username,setUsername]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[notice,setNotice]=useState('');
+  async function submit(e){e.preventDefault();setBusy(true);setError('');setNotice('');try{if(mode==='login'){const {error}=await supabase.auth.signInWithPassword({email,password});if(error)throw error;onDone();}else{const {data,error}=await supabase.auth.signUp({email,password});if(error)throw error;if(data.user){const {error:profileError}=await supabase.rpc('update_my_profile',{new_display_name:name.trim(),new_bio:''});if(profileError)throw profileError;}if(data.session)onDone();else setNotice('حساب ساخته شد. اگر تأیید ایمیل فعال است، ایمیل خود را بررسی کن.');}}catch(err){setError(err.message||'خطای ناشناخته')}finally{setBusy(false)}}
+  return <div className="auth-page"><div className="auth-shell"><a className="logo auth-logo" href="/">utino</a><section className="auth-card"><div className="auth-icon">{mode==='login'?<ArrowLeft size={24}/>:<Plus size={24}/>}</div><h1>{mode==='login'?'خوش برگشتی':'ساخت حساب utino'}</h1><p>{mode==='login'?'برای ادامه وارد حساب شو.':'چند ثانیه تا شروع فاصله داری.'}</p><form onSubmit={submit}>{mode==='signup'&&<><label>نام نمایشی<input required value={name} onChange={e=>setName(e.target.value)} placeholder="نام شما"/></label><label>نام کاربری<input required minLength={3} maxLength={20} pattern="[A-Za-z0-9_]+" value={username} onChange={e=>setUsername(e.target.value)} placeholder="username"/></label></>}<label>ایمیل<input required type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="you@example.com" autoComplete="email"/></label><label>رمز عبور<input required minLength={6} type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="حداقل ۶ کاراکتر" autoComplete={mode==='login'?'current-password':'new-password'}/></label>{error&&<div className="error-box">{error}</div>}{notice&&<div className="notice-box">{notice}</div>}<button className="primary submit" disabled={busy}>{busy?'در حال بررسی…':mode==='login'?'ورود':'ثبت‌نام'}</button></form><button className="switch" onClick={()=>{setMode(mode==='login'?'signup':'login');setError('');setNotice('')}}>{mode==='login'?'حساب نداری؟ ثبت‌نام کن':'قبلاً حساب ساخته‌ای؟ وارد شو'}</button></section><a className="back-link" href="/">بازگشت به صفحه اصلی</a></div></div>;
 }
 
-function App() {
-  const [path, setPath] = useState(window.location.pathname);
-  const [session, setSession] = useState(null);
-  const [profile, setProfile] = useState(null);
-  const [booting, setBooting] = useState(true);
-  const [authMode, setAuthMode] = useState('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [username, setUsername] = useState('');
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [dark, setDark] = useState(() => localStorage.getItem('utino-theme') === 'dark');
-
-  useEffect(() => {
-    const onPop = () => setPath(window.location.pathname);
-    window.addEventListener('popstate', onPop);
-    return () => window.removeEventListener('popstate', onPop);
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
-    localStorage.setItem('utino-theme', dark ? 'dark' : 'light');
-  }, [dark]);
-
-  useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => { if (mounted) { setSession(data.session); setBooting(false); } }).catch(e => { if (mounted) { setError(e.message); setBooting(false); } });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => { setSession(next); setBooting(false); });
-    return () => { mounted = false; listener.subscription.unsubscribe(); };
-  }, []);
-
-  useEffect(() => {
-    if (!session) { setProfile(null); return; }
-    supabase.rpc('get_my_profile').then(({ data, error: profileError }) => { if (profileError) setError(profileError.message); else setProfile(Array.isArray(data) ? data[0] : data); });
-  }, [session?.user?.id]);
-
-  async function authenticate(e) {
-    e.preventDefault(); setBusy(true); setError(''); setNotice('');
-    try {
-      if (authMode === 'login') {
-        const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
-        if (authError) throw authError;
-        history.pushState({}, '', '/messenger/'); setPath('/messenger/');
-      } else {
-        const { data, error: authError } = await supabase.auth.signUp({ email, password, options: { data: { display_name: displayName.trim(), username: username.trim() } } });
-        if (authError) throw authError;
-        if (data.session) { await supabase.rpc('update_my_profile', { new_display_name: displayName.trim(), new_bio: '' }); history.pushState({}, '', '/messenger/'); setPath('/messenger/'); }
-        else setNotice('ثبت‌نام انجام شد. در صورت فعال بودن تأیید ایمیل، ایمیل خود را بررسی کن.');
-      }
-    } catch (e2) { setError(e2.message || 'عملیات ناموفق بود'); }
-    finally { setBusy(false); }
-  }
-
-  async function logout() { await supabase.auth.signOut(); history.pushState({}, '', '/'); setPath('/'); }
-  const start = () => { setAuthMode('signup'); history.pushState({}, '', '/login'); setPath('/login'); };
-  const login = () => { setAuthMode('login'); history.pushState({}, '', '/login'); setPath('/login'); };
-
-  if (booting) return <Splash/>;
-  if (session) return <Messenger session={session} profile={profile} setProfile={setProfile} dark={dark} setDark={setDark} onLogout={logout}/>;
-  if (path.startsWith('/login')) return <Auth {...{ mode: authMode, setMode: setAuthMode, email, setEmail, password, setPassword, displayName, setDisplayName, username, setUsername, onSubmit: authenticate, error, notice, busy }}/>;
-  return <Landing onStart={start} onLogin={login}/>;
+function Messenger({session,profile,onLogout,dark,setDark}) {
+  const [chats,setChats]=useState([]),[selected,setSelected]=useState(null),[messages,setMessages]=useState([]),[query,setQuery]=useState(''),[people,setPeople]=useState([]),[channels,setChannels]=useState([]),[text,setText]=useState(''),[loading,setLoading]=useState(false),[sending,setSending]=useState(false),[mobile,setMobile]=useState(false),[menu,setMenu]=useState(false),[settings,setSettings]=useState(false);const bottom=useRef(null);
+  async function loadChats(){const {data:members,error:me}=await supabase.from('conversation_members').select('conversation_id').eq('user_id',session.user.id).is('left_at',null);if(me)return;const ids=[...new Set((members||[]).map(x=>x.conversation_id))];if(!ids.length){setChats([]);setSelected(null);return []}const {data,error}=await supabase.from('conversations').select('*').in('id',ids).order('created_at',{ascending:false});if(error)return [];const list=(data||[]).map(c=>({...c,title:c.title||(c.type==='group'?'گروه':'گفتگوی خصوصی'),preview:c.description||(c.is_channel?'کانال':c.type==='group'?'گروه':'گفتگوی خصوصی'),time:time(c.created_at),unread:0}));setChats(list);setSelected(s=>s&&list.some(x=>x.id===s.id)?list.find(x=>x.id===s.id):list[0]||null);return list}
+  async function loadMessages(id){setLoading(true);const {data,error}=await supabase.from('messages').select('*').eq('conversation_id',id).is('deleted_at',null).order('created_at',{ascending:true}).limit(500);if(!error)setMessages(data||[]);else setMessages([]);setLoading(false);requestAnimationFrame(()=>bottom.current?.scrollIntoView({behavior:'smooth'}))}
+  useEffect(()=>{loadChats()},[session.user.id]);useEffect(()=>{if(selected?.id){loadMessages(selected.id);setMobile(true)}else setMessages([])},[selected?.id]);
+  useEffect(()=>{const channel=supabase.channel(`utino-messages-${session.user.id}`).on('postgres_changes',{event:'INSERT',schema:'public',table:'messages'},payload=>{const row=payload.new;if(row.conversation_id===selected?.id){setMessages(old=>old.some(m=>m.id===row.id)?old:[...old,row]);requestAnimationFrame(()=>bottom.current?.scrollIntoView({behavior:'smooth'}))}setChats(old=>old.map(c=>c.id===row.conversation_id?{...c,preview:row.content||'رسانه',time:time(row.created_at)}:c))}).subscribe();return()=>supabase.removeChannel(channel)},[session.user.id,selected?.id]);
+  useEffect(()=>{if(!query.trim()){setPeople([]);setChannels([]);return}const t=setTimeout(async()=>{const [p,c]=await Promise.all([supabase.rpc('search_user_directory',{search_text:query.trim(),result_limit:20}),supabase.rpc('search_public_channels',{search_text:query.trim()})]);setPeople(p.data||[]);setChannels(c.data||[])},220);return()=>clearTimeout(t)},[query]);
+  async function send(e){e.preventDefault();const content=text.trim();if(!content||!selected||sending)return;setSending(true);setText('');const {data,error}=await supabase.from('messages').insert({sender_id:session.user.id,conversation_id:selected.id,content,message_type:'text'}).select().single();if(error)setText(content);else if(data)setMessages(old=>old.some(m=>m.id===data.id)?old:[...old,data]);setSending(false);requestAnimationFrame(()=>bottom.current?.scrollIntoView({behavior:'smooth'}))}
+  async function person(p){const {data,error}=await supabase.rpc('get_or_create_direct_conversation',{other_user_id:p.id});if(error)return;const id=Array.isArray(data)?data[0]:data;const list=await loadChats();const found=list.find(c=>c.id===id);if(found)setSelected(found);setQuery('');setMobile(true)}
+  const visible=useMemo(()=>query?chats.filter(c=>`${c.title} ${c.preview}`.toLowerCase().includes(query.toLowerCase())):chats,[chats,query]);
+  return <div className={`messenger ${dark?'dark':''}`}><aside className={`sidebar ${mobile?'mobile-hidden':''}`}><div className="sidebar-head"><button className="icon-btn"><Menu size={21}/></button><b className="mini-brand">utino</b><button className="icon-btn" onClick={()=>setMenu(v=>!v)}><MoreVertical size={20}/></button>{menu&&<div className="popover"><button onClick={()=>{setSettings(true);setMenu(false)}}><Settings size={17}/> تنظیمات</button><button onClick={()=>setDark(!dark)}>{dark?<Sun size={17}/>:<Moon size={17}/>} {dark?'حالت روشن':'حالت تاریک'}</button><button onClick={onLogout}><ArrowLeft size={17}/> خروج</button></div>}</div><div className="search-box"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="جست‌وجو"/></div>{query&&<div className="search-results">{people.map(p=><button key={p.id} onClick={()=>person(p)}><Avatar value={p.display_name||p.username}/><span><b>{p.display_name||p.username}</b><small>@{p.username}</small></span></button>)}{channels.map(c=><button key={c.id}><Avatar value="#"/><span><b>{c.title}</b><small>کانال · {c.member_count||0} عضو</small></span></button>)}{!people.length&&!channels.length&&<span className="no-results">نتیجه‌ای پیدا نشد</span>}</div>}<div className="tabs"><button className="active"><MessageCircle size={16}/> گفتگوها</button><button><Users size={16}/> مخاطبین</button></div><div className="chat-list">{visible.map(c=><button key={c.id} className={`chat-item ${selected?.id===c.id?'selected':''}`} onClick={()=>setSelected(c)}><Avatar value={c.title}/><span className="chat-item-body"><b>{c.title}</b><small>{c.preview}</small></span><span className="chat-meta"><small>{c.time}</small></span></button>)}{!visible.length&&<div className="list-empty"><MessageCircle size={30}/><b>هنوز گفتگویی نیست</b><span>از جست‌وجو شروع کن.</span></div>}</div></aside><section className={`chat-pane ${!mobile?'mobile-hidden':''}`}>{selected?<><header className="chat-head"><button className="mobile-back icon-btn" onClick={()=>setMobile(false)}><ArrowLeft size={21}/></button><Avatar value={selected.title}/><div className="chat-title"><b>{selected.title}</b><small>{selected.is_channel?'کانال':selected.type==='group'?'گروه':'آنلاین'}</small></div><div className="chat-head-actions"><button className="icon-btn"><Phone size={19}/></button><button className="icon-btn"><Video size={20}/></button><button className="icon-btn"><Search size={19}/></button><button className="icon-btn"><MoreVertical size={20}/></button></div></header><div className="message-area">{loading?<div className="loading-ring"/>:<>{messages.length>0&&<div className="date-pill">{date(messages[0].created_at)}</div>}{messages.map(m=><div key={m.id} className={`message ${m.sender_id===session.user.id?'mine':'theirs'}`}><div className="bubble">{m.content}<span className="bubble-time">{time(m.created_at)} {m.sender_id===session.user.id&&(m.seen_at?<CheckCheck size={14}/>:<Check size={14}/>)}</span></div></div>)}<div ref={bottom}/></>}</div><form className="composer" onSubmit={send}><button type="button" className="icon-btn"><Paperclip size={21}/></button><input value={text} onChange={e=>setText(e.target.value)} placeholder="پیام..."/><button type="button" className="icon-btn"><Smile size={21}/></button><button className="send-btn" disabled={!text.trim()||sending}><Send size={19}/></button></form></>:<div className="chat-empty"><div className="empty-logo">u</div><h2>پیام‌رسان utino</h2><p>یک گفتگو را انتخاب کن یا جست‌وجو را امتحان کن.</p></div>}</section>{settings&&<div className="modal-backdrop" onClick={()=>setSettings(false)}><div className="modal" onClick={e=>e.stopPropagation()}><button className="modal-close" onClick={()=>setSettings(false)}><X size={19}/></button><div className="settings-avatar"><Avatar value={profile?.display_name||profile?.username}/></div><h2>{profile?.display_name||'حساب شما'}</h2><p>@{profile?.username||'username'}</p><div className="settings-row"><Bell size={18}/> اعلان‌ها <span>›</span></div><div className="settings-row"><Moon size={18}/> حالت تاریک <input type="checkbox" checked={dark} onChange={e=>setDark(e.target.checked)}/></div><div className="settings-row"><Archive size={18}/> آرشیو گفتگوها <span>›</span></div></div></div>}</div>
 }
+
+function App(){const [route,setRoute]=useState(location.pathname),[session,setSession]=useState(null),[profile,setProfile]=useState(null),[mode,setMode]=useState(location.pathname==='/signup'?'signup':'login'),[dark,setDark]=useState(()=>localStorage.getItem('utino-dark')==='1'),[checking,setChecking]=useState(true);const go=p=>{history.pushState({},'',p);setRoute(p);if(p==='/login'||p==='/signup')setMode(p.slice(1))};useEffect(()=>{const f=()=>{setRoute(location.pathname);if(location.pathname==='/login'||location.pathname==='/signup')setMode(location.pathname.slice(1))};addEventListener('popstate',f);return()=>removeEventListener('popstate',f)},[]);useEffect(()=>localStorage.setItem('utino-dark',dark?'1':'0'),[dark]);useEffect(()=>{let mounted=true;supabase.auth.getSession().then(async({data})=>{if(!mounted)return;setSession(data.session);if(data.session){const {data:p}=await supabase.rpc('get_my_profile');setProfile(Array.isArray(p)?p[0]:p)}setChecking(false)});const {data:{subscription}}=supabase.auth.onAuthStateChange(async(_e,s)=>{setSession(s);if(s){const {data:p}=await supabase.rpc('get_my_profile');setProfile(Array.isArray(p)?p[0]:p)}});return()=>{mounted=false;subscription.unsubscribe()}},[]);async function logout(){await supabase.auth.signOut();go('/')};if(checking)return <div className="boot"><div className="boot-logo">u</div><div className="spinner"/></div>;if(session)return <Messenger session={session} profile={profile} onLogout={logout} dark={dark} setDark={setDark}/>;if(route==='/login'||route==='/signup'||route==='/messenger')return <Auth mode={mode} setMode={setMode} onDone={()=>go('/messenger')}/>;return <Landing go={go}/>}
 
 createRoot(document.getElementById('root')).render(<App/>);
