@@ -1,4 +1,5 @@
 import "./globals.css";
+import "./telegram-ui.css";
 
 export const metadata = {
   title: "UTINOCHATV1",
