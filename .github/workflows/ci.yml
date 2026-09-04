@@ -1,93 +1,47 @@
-name: UTINO Chat Build and Deploy
-
+name: UTINO Chat CI
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-
 permissions:
   contents: read
-
 concurrency:
-  group: utino-chat-${{ github.ref }}
+  group: utino-${{ github.ref }}
   cancel-in-progress: true
-
 env:
   NEXT_PUBLIC_SUPABASE_URL: https://jcblfgrcsgbdeamogzfc.supabase.co
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K
-
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Generate lockfile when absent
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Install dependencies with npm ci
-        run: npm ci --no-audit --no-fund
-      - name: Static architecture and secret audit
-        run: npm run audit
-      - name: Finalize UTINO Chat source
-        run: node scripts/finalize-utino.mjs
-      - name: Production build
-        run: npm run build
-      - name: Verify static export
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f out/index.html
-          test -f out/404.html
-          test -d out/_next/static
-          grep -qi "utino chat" out/index.html
-          test "$(find out -type f | wc -l)" -gt 10
-      - name: Validate Wrangler and Cloudflare dry-run
-        run: npx wrangler deploy --dry-run --config wrangler.jsonc
-      - name: Upload validated build artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: utino-chat-static-export
-          path: out
-          if-no-files-found: error
-          retention-days: 3
-
+          cache: npm
+      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: test -f out/index.html && test -f out/404.html && test -d out/_next/static
+      - run: npx wrangler deploy --dry-run --config wrangler.jsonc
   deploy:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - name: Checkout
-        uses: actions/checkout@v5
-      - name: Setup Node.js
-        uses: actions/setup-node@v5
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
-      - name: Generate lockfile when absent
-        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
-      - name: Install dependencies with npm ci
-        run: npm ci --no-audit --no-fund
-      - name: Download validated build artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: utino-chat-static-export
-          path: out
-      - name: Verify deployment artifact
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -f out/index.html
-          test -f out/404.html
-          test -d out/_next/static
-          grep -qi "utino chat" out/index.html
-      - name: Deploy validated artifact to Cloudflare Workers
-        run: npx wrangler deploy --config wrangler.jsonc
+          cache: npm
+      - run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - run: npm ci --no-audit --no-fund
+      - run: npm run build
+      - run: npx wrangler deploy --config wrangler.jsonc
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

@@ -1,77 +1,8 @@
 "use client";
-
-import { useState } from "react";
+import {useState} from "react";
 import Icon from "../components/Icon";
-import "../utino-system.css";
-import "./ux-polish.css";
-import "./messenger-menu.css";
-import "./platform-ui.css";
-import "./messenger-v7.css";
 import ChatWorkspace from "./ChatWorkspace";
 import SupportChat from "./SupportChat";
 import ProfilePanel from "./ProfilePanel";
-
-function MessengerMenu() {
-  const [open, setOpen] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
-
-  function newChat() {
-    setOpen(false);
-    const input = document.querySelector(".uc-search-wrap input");
-    input?.focus();
-    input?.select();
-  }
-
-  function openSupport() {
-    setOpen(false);
-    setSupportOpen(true);
-  }
-
-  return (
-    <>
-      <div className="uc-messenger-menu">
-        <div className="uc-topbar-actions">
-          <ProfilePanel />
-          <button className="uc-menu-trigger" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="menu" aria-label="منوی مسنجر" title="منوی مسنجر">
-            <Icon name={open ? "close" : "menu"} size={21} animated />
-          </button>
-        </div>
-        {open && <>
-          <button className="uc-menu-scrim" type="button" aria-label="بستن منو" onClick={() => setOpen(false)} />
-          <div className="uc-menu-panel" role="menu" dir="rtl">
-            <div className="uc-menu-heading">
-              <span className="uc-menu-brand-dot"><Icon name="send" size={15} animated /></span>
-              <span>UTINOCHATV1</span>
-            </div>
-            <button className="uc-menu-item uc-menu-primary" type="button" onClick={newChat} role="menuitem">
-              <span className="uc-menu-icon"><Icon name="plusCircle" size={20} animated /></span>
-              <span><strong>گفتگوی جدید</strong><small>پیدا کردن کاربر و شروع چت</small></span>
-              <Icon name="chevron" size={16} className="uc-menu-chevron" />
-            </button>
-            <a className="uc-menu-item" href="/settings/" role="menuitem" onClick={() => setOpen(false)}>
-              <span className="uc-menu-icon uc-menu-icon-neutral"><Icon name="settings" size={19} animated /></span>
-              <span><strong>تنظیمات و پروفایل</strong><small>حساب، ظاهر و اطلاعات پروفایل</small></span>
-              <Icon name="chevron" size={16} className="uc-menu-chevron" />
-            </a>
-            <a className="uc-menu-item" href="/admin/" role="menuitem" onClick={() => setOpen(false)}>
-              <span className="uc-menu-icon uc-menu-icon-neutral"><Icon name="shield" size={19} animated /></span>
-              <span><strong>پنل مدیریت</strong><small>مدیریت امن و دسترسی‌های مجاز</small></span>
-              <Icon name="chevron" size={16} className="uc-menu-chevron" />
-            </a>
-            <div className="uc-menu-divider" />
-            <button className="uc-menu-item uc-menu-support" type="button" onClick={openSupport} role="menuitem">
-              <span className="uc-menu-icon uc-menu-icon-support"><Icon name="support" size={19} animated /></span>
-              <span><strong>پشتیبانی و تیکت</strong><small>گفتگوی مستقیم یا ثبت درخواست</small></span>
-              <Icon name="chevron" size={16} className="uc-menu-chevron" />
-            </button>
-          </div>
-        </>}
-      </div>
-      {supportOpen && <SupportChat onClose={() => setSupportOpen(false)} />}
-    </>
-  );
-}
-
-export default function MessengerPage() {
-  return <><MessengerMenu /><ChatWorkspace /></>;
-}
+import "../core.css";
+export default function MessengerPage(){const [menu,setMenu]=useState(false);const [support,setSupport]=useState(false);return <><div className="uc-messenger-menu"><div className="uc-topbar-actions"><ProfilePanel/><button className="uc-menu-trigger" onClick={()=>setMenu(v=>!v)} aria-label="منوی اصلی"><Icon name={menu?"close":"menu"} size={21} animated/></button></div>{menu&&<><button className="uc-menu-scrim" onClick={()=>setMenu(false)} aria-label="بستن"/><div className="uc-menu-panel" dir="rtl"><div className="uc-menu-heading"><span className="uc-menu-brand-dot"><Icon name="send" size={15} animated/></span><b>utino chat</b></div><button className="uc-menu-item" onClick={()=>{setMenu(false);document.querySelector(".uc-search-wrap input")?.focus()}}><span className="uc-menu-icon"><Icon name="plusCircle" size={20} animated/></span><span><strong>گفتگوی جدید</strong><small>کاربر، گروه یا کانال</small></span><Icon name="chevron" size={16}/></button><a className="uc-menu-item" href="/settings/" onClick={()=>setMenu(false)}><span className="uc-menu-icon"><Icon name="settings" size={19} animated/></span><span><strong>تنظیمات</strong><small>حساب و ظاهر</small></span><Icon name="chevron" size={16}/></a><button className="uc-menu-item" onClick={()=>{setMenu(false);setSupport(true)}}><span className="uc-menu-icon"><Icon name="support" size={19} animated/></span><span><strong>پشتیبانی</strong><small>ارتباط با تیم utino</small></span><Icon name="chevron" size={16}/></button></div></>}</div>{support&&<SupportChat onClose={()=>setSupport(false)}/>}<ChatWorkspace/></>}

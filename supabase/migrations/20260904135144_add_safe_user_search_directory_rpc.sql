@@ -1,0 +1,3 @@
+-- Migration history compatibility marker for the existing production schema.
+-- The production project already contains this migration version.
+-- Keep this file in Git so Supabase GitHub Preview can reconcile remote history.
