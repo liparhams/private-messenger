@@ -6,6 +6,7 @@ import "../utino-system.css";
 import "./ux-polish.css";
 import "./messenger-menu.css";
 import "./platform-ui.css";
+import "./messenger-v7.css";
 import ChatWorkspace from "./ChatWorkspace";
 import SupportChat from "./SupportChat";
 import ProfilePanel from "./ProfilePanel";
@@ -31,20 +32,46 @@ function MessengerMenu() {
       <div className="uc-messenger-menu">
         <div className="uc-topbar-actions">
           <ProfilePanel />
-          <button className="uc-menu-trigger" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="menu" aria-label="منوی مسنجر" title="منوی مسنجر"><Icon name="menu" size={21} /></button>
+          <button className="uc-menu-trigger" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="menu" aria-label="منوی مسنجر" title="منوی مسنجر">
+            <Icon name={open ? "close" : "menu"} size={21} animated />
+          </button>
         </div>
-        {open && <><button className="uc-menu-scrim" type="button" aria-label="بستن منو" onClick={() => setOpen(false)} /><div className="uc-menu-panel" role="menu" dir="rtl">
-          <div className="uc-menu-heading"><span className="uc-menu-brand-dot"><Icon name="send" size={15} /></span>UTINOCHATV1</div>
-          <button className="uc-menu-item uc-menu-primary" type="button" onClick={newChat} role="menuitem"><span className="uc-menu-icon"><Icon name="plus" size={19} /></span><span><strong>گفتگوی جدید</strong><small>پیدا کردن کاربر و شروع چت</small></span></button>
-          <a className="uc-menu-item" href="/settings/" role="menuitem" onClick={() => setOpen(false)}><span className="uc-menu-icon uc-menu-icon-neutral"><Icon name="settings" size={19} /></span><span><strong>تنظیمات و پروفایل</strong><small>نام نمایشی، بیو، ظاهر و حساب</small></span></a>
-          <a className="uc-menu-item" href="/admin/" role="menuitem" onClick={() => setOpen(false)}><span className="uc-menu-icon uc-menu-icon-neutral"><Icon name="shield" size={19} /></span><span><strong>پنل مدیریت</strong><small>فقط برای حساب‌های مجاز</small></span></a>
-          <div className="uc-menu-divider" />
-          <button className="uc-menu-item uc-menu-support" type="button" onClick={openSupport} role="menuitem"><span className="uc-menu-icon uc-menu-icon-support"><Icon name="support" size={19} /></span><span><strong>پشتیبانی و تیکت</strong><small>گفتگوی مستقیم یا ثبت درخواست</small></span></button>
-        </div></>}
+        {open && <>
+          <button className="uc-menu-scrim" type="button" aria-label="بستن منو" onClick={() => setOpen(false)} />
+          <div className="uc-menu-panel" role="menu" dir="rtl">
+            <div className="uc-menu-heading">
+              <span className="uc-menu-brand-dot"><Icon name="send" size={15} animated /></span>
+              <span>UTINOCHATV1</span>
+            </div>
+            <button className="uc-menu-item uc-menu-primary" type="button" onClick={newChat} role="menuitem">
+              <span className="uc-menu-icon"><Icon name="plusCircle" size={20} animated /></span>
+              <span><strong>گفتگوی جدید</strong><small>پیدا کردن کاربر و شروع چت</small></span>
+              <Icon name="chevron" size={16} className="uc-menu-chevron" />
+            </button>
+            <a className="uc-menu-item" href="/settings/" role="menuitem" onClick={() => setOpen(false)}>
+              <span className="uc-menu-icon uc-menu-icon-neutral"><Icon name="settings" size={19} animated /></span>
+              <span><strong>تنظیمات و پروفایل</strong><small>حساب، ظاهر و اطلاعات پروفایل</small></span>
+              <Icon name="chevron" size={16} className="uc-menu-chevron" />
+            </a>
+            <a className="uc-menu-item" href="/admin/" role="menuitem" onClick={() => setOpen(false)}>
+              <span className="uc-menu-icon uc-menu-icon-neutral"><Icon name="shield" size={19} animated /></span>
+              <span><strong>پنل مدیریت</strong><small>مدیریت امن و دسترسی‌های مجاز</small></span>
+              <Icon name="chevron" size={16} className="uc-menu-chevron" />
+            </a>
+            <div className="uc-menu-divider" />
+            <button className="uc-menu-item uc-menu-support" type="button" onClick={openSupport} role="menuitem">
+              <span className="uc-menu-icon uc-menu-icon-support"><Icon name="support" size={19} animated /></span>
+              <span><strong>پشتیبانی و تیکت</strong><small>گفتگوی مستقیم یا ثبت درخواست</small></span>
+              <Icon name="chevron" size={16} className="uc-menu-chevron" />
+            </button>
+          </div>
+        </>}
       </div>
       {supportOpen && <SupportChat onClose={() => setSupportOpen(false)} />}
     </>
   );
 }
 
-export default function MessengerPage() { return <><MessengerMenu /><ChatWorkspace /></>; }
+export default function MessengerPage() {
+  return <><MessengerMenu /><ChatWorkspace /></>;
+}
