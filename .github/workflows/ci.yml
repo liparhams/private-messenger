@@ -47,6 +47,8 @@ jobs:
           test -d out/_next/static
           grep -q "UTINOCHATV1" out/index.html
           test "$(find out -type f | wc -l)" -gt 10
+      - name: Validate Wrangler and Cloudflare dry-run
+        run: npx wrangler deploy --dry-run --config wrangler.jsonc
       - name: Upload validated build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -87,4 +89,4 @@ jobs:
       - name: Publish note
         run: |
           echo "Validated static export is ready for Vercel, Netlify, GitHub Pages, or another static host."
-          echo "Cloudflare Workers/Wrangler deployment is intentionally disabled."
+          echo "Cloudflare deployment remains a dry-run validation only; no deployment credentials are committed."
