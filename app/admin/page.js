@@ -1,6 +1,6 @@
 "use client";
 import{useCallback,useEffect,useMemo,useState}from"react";
-import{createClient}from"@supabase/supabase-js";
+import{db}from"../lib/supabase-client";
 import mapError from"../lib/error-map";
 import "../utino-platform.css";
 import "../utino-system.css";
@@ -10,9 +10,6 @@ import "./admin-v3.css";
 import GroupChannelManager from "./GroupChannelManager";
 import SupportTickets from "./SupportTickets";
 
-const SUPABASE_URL="https://jcblfgrcsgbdeamogzfc.supabase.co";
-const KEY="sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
-const db=createClient(SUPABASE_URL,KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 const tabs=[["home","داشبورد"],["users","کاربران"],["create","ساخت کاربر"],["groups","گروه و کانال"],["messages","همه پیام‌ها"],["tickets","تیکت‌ها"],["logs","لاگ‌ها"],["settings","تنظیمات"]];
 const badges=[["none","بدون تیک"],["blue","تیک آبی"],["green","تیک سبز"],["orange","تیک نارنجی"],["red","تیک قرمز"]];
 const roles=[["user","کاربر"],["support","پشتیبانی"],["admin","ادمین"]];
@@ -24,15 +21,15 @@ export default function Admin(){
  const load=useCallback(async()=>{
   setLoading(true);setErr("");
   try{
-   const{data:{user},error:authError}=await db.auth.getUser();
-   if(authError)throw authError;
-   if(!user){location.href="/";return}
+   const{data:{session},error:sessionError}=await db.auth.getSession();
+   if(sessionError)throw sessionError;
+   const user=session?.user;
+   if(!user){location.replace("/");return}
    const{data:my,error:pe}=await db.rpc("get_my_profile");
    if(pe)throw pe;
    const p=Array.isArray(my)?my[0]||null:my||null;
    if(!p||p.id!==user.id||p.role!=="admin"){setMe(null);setErr("دسترسی غیرمجاز");return}
    setMe(p);
-
    const results=await Promise.allSettled([
     db.from("profiles").select("id,username,display_name,role,public_id,is_verified,is_banned,verification,created_at").order("created_at",{ascending:false}),
     db.from("messages").select("id,sender_id,receiver_id,conversation_id,content,message_type,file_name,created_at,edited_at,deleted_at").order("created_at",{ascending:false}).limit(1000),
