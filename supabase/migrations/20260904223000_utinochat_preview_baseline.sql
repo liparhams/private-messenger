@@ -1,0 +1,5 @@
+-- UTINO Chat migration baseline marker.
+-- Production schema is already managed by Supabase.
+-- This intentionally contains no DDL: it keeps Git-based Preview Branches
+-- from replaying the historical migration set that was previously out of sync.
+-- Future schema changes must be added as new timestamped migrations.
