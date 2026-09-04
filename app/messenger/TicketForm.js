@@ -1,7 +1,6 @@
 "use client";
 import {useEffect,useState} from "react";
-import {createClient} from "@supabase/supabase-js";
-const db=createClient("https://jcblfgrcsgbdeamogzfc.supabase.co","sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K");
+import {db} from "../lib/supabase-client";
 export default function TicketForm({onClose}){const[subject,setSubject]=useState(""),[body,setBody]=useState(""),[busy,setBusy]=useState(false),[done,setDone]=useState(false),[error,setError]=useState("");
  async function submit(e){e.preventDefault();if(!subject.trim()||!body.trim()||busy)return;setBusy(true);setError("");const{data:{user}}=await db.auth.getUser();if(!user){setError("نشست ورود معتبر نیست.");setBusy(false);return}const{data:t,error:te}=await db.from("support_tickets").insert({user_id:user.id,subject:subject.trim(),status:"open",priority:"normal"}).select("id").single();if(te){setError(te.message);setBusy(false);return}const{error:me}=await db.from("support_ticket_messages").insert({ticket_id:t.id,sender_id:user.id,content:body.trim()});if(me){setError(me.message);setBusy(false);return}setDone(true);setBusy(false)}
  if(done)return <div className="uc-ticket-success" dir="rtl"><h3>تیکت ثبت شد ✓</h3><p>درخواستت برای پشتیبانی ارسال شد.</p><button onClick={onClose}>بستن</button></div>;
