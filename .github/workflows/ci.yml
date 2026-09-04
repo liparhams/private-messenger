@@ -32,6 +32,9 @@ jobs:
       - name: Apply Utino UI patches
         run: node scripts/apply-utino-patches.mjs
 
+      - name: Finalize UTINOCHATV1 release UI
+        run: node scripts/finalize-utino.mjs
+
       - name: Production build
         run: npm run build
 
@@ -42,7 +45,7 @@ jobs:
           test -f out/index.html
           test -f out/404.html
           test -d out/_next/static
-          grep -q "Messenger" out/index.html
+          grep -q "UTINOCHATV1" out/index.html
           test "$(find out -type f | wc -l)" -gt 10
 
       - name: Validate Cloudflare deployment package
@@ -86,7 +89,7 @@ jobs:
           test -f out/index.html
           test -f out/404.html
           test -d out/_next/static
-          grep -q "Messenger" out/index.html
+          grep -q "UTINOCHATV1" out/index.html
 
       - name: Deploy exact validated artifact to Cloudflare Workers
         run: npx wrangler deploy
