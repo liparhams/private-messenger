@@ -47,8 +47,6 @@ jobs:
           test -d out/_next/static
           grep -q "UTINOCHATV1" out/index.html
           test "$(find out -type f | wc -l)" -gt 10
-      - name: Validate Cloudflare package
-        run: npx wrangler deploy --dry-run
       - name: Upload validated build artifact
         uses: actions/upload-artifact@v4
         with:
@@ -86,8 +84,7 @@ jobs:
           test -f out/404.html
           test -d out/_next/static
           grep -q "UTINOCHATV1" out/index.html
-      - name: Deploy exact validated artifact to Cloudflare Workers
-        run: npx wrangler deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Publish note
+        run: |
+          echo "Validated static export is ready for Vercel, Netlify, GitHub Pages, or another static host."
+          echo "Cloudflare Workers/Wrangler deployment is intentionally disabled."
