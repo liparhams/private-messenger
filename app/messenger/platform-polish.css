@@ -1,0 +1,26 @@
+/* UTINOCHATV1 unified platform layer. Visual-only overrides, no data/auth logic. */
+.uc-shell{--radius-sm:9px;--radius-md:12px;--radius-lg:16px;--control-h:40px;--focus:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}
+.uc-shell button,.uc-shell input{transition:background-color .16s,border-color .16s,color .16s,box-shadow .16s,transform .16s}
+.uc-shell button:focus-visible,.uc-shell input:focus-visible{outline:0;box-shadow:var(--focus)}
+.uc-brand{height:40px;padding:0 6px;border-radius:10px}.uc-brand:hover{background:var(--panel2)}
+.uc-brand-mark{width:34px;height:34px;border-radius:10px;font-size:15px}
+.uc-sidebar-head{height:64px;padding:12px 14px}
+.uc-search-wrap{height:40px;border-radius:11px;margin:0 12px 10px}
+.uc-sidebar-tools{padding:0 12px 10px}.uc-new-group{height:36px;border-radius:10px;font-size:12px}
+.uc-section-label{padding:6px 16px;font-size:10px}
+.uc-chat-list{padding:2px 7px}.uc-chat-row{min-height:58px;padding:8px 9px;border-radius:12px;gap:10px}.uc-chat-row.active{box-shadow:inset 3px 0 0 var(--accent)}
+.uc-avatar{width:42px;height:42px;min-width:42px;font-size:15px}
+.uc-chat-copy strong{font-size:13px}.uc-chat-copy small{font-size:10px}
+.uc-sidebar-foot{padding:9px 10px}.uc-sidebar-foot>button:first-child{padding:5px 6px;border-radius:10px}.uc-sidebar-foot>button:first-child:hover{background:var(--panel2)}
+.uc-chat-head{height:64px;min-height:64px;padding:0 16px}.uc-chat-title strong{font-size:13px}.uc-chat-title span{font-size:10px}
+.uc-message-area{padding:20px clamp(12px,4vw,60px) 14px;gap:6px}.uc-message-wrap{max-width:min(68%,620px)}
+.uc-bubble{padding:8px 11px 6px;border-radius:13px}.mine .uc-bubble{border-radius:13px 13px 4px 13px}.theirs .uc-bubble{border-radius:13px 13px 13px 4px}
+.uc-message-text{font-size:12.5px;line-height:1.7}.uc-message-meta time{font-size:8px}
+.uc-composer-area{padding:7px clamp(10px,3.5vw,56px) 12px}.uc-composer{min-height:48px;border-radius:14px;padding:4px 5px}.uc-composer input{font-size:12px;padding:8px}.uc-composer>button{width:37px;height:37px;border-radius:10px}.uc-composer .uc-send{font-size:13px}
+.uc-search-results{top:114px;left:7px;right:7px;border-radius:12px;padding:5px}.uc-search-card{padding:7px;border-radius:10px}.uc-search-card>button{height:30px;border:1px solid var(--line);background:var(--panel);color:var(--text);border-radius:8px;padding:0 9px;font-size:10px}.uc-search-card>button:hover{background:var(--accent2);color:var(--accent);border-color:transparent}
+.uc-create-menu button{border-radius:12px!important}.uc-modal{border-radius:18px!important}.uc-modal header{min-height:52px}.uc-modal header button{width:32px!important;height:32px!important;border-radius:9px!important}
+.uc-welcome{max-width:390px}.uc-welcome-mark{width:54px;height:54px;border-radius:16px}.uc-welcome h1{font-size:24px;margin:15px 0 4px}.uc-welcome p{font-size:11px}.uc-welcome-actions button{height:38px;border-radius:10px;padding:0 12px}
+.uc-error{border-radius:10px}.uc-mention-menu{border-radius:12px}
+@media(max-width:900px){.uc-sidebar{width:320px;min-width:320px}.uc-message-wrap{max-width:76%}.uc-chat-head{padding:0 12px}}
+@media(max-width:700px){.uc-shell{position:fixed}.uc-sidebar{width:100%;min-width:0}.uc-shell:not(.sidebar-open) .uc-sidebar{display:none}.uc-chat{width:100%}.uc-message-area{padding-inline:10px}.uc-message-wrap{max-width:86%}.uc-composer-area{padding-inline:8px}.uc-sidebar-head{height:60px}.uc-chat-head{height:58px;min-height:58px}.uc-avatar{width:40px;height:40px;min-width:40px}.uc-welcome{padding:18px}.uc-new-group{height:34px}}
+@media(prefers-reduced-motion:reduce){.uc-shell button,.uc-shell input{transition:none!important}}
