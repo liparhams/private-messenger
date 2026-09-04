@@ -2,6 +2,7 @@
 import {useEffect,useState} from "react";
 import {createClient} from "@supabase/supabase-js";
 import "../utino-platform.css";
+import "../utino-system.css";
 import "../auth.css";
 const SUPABASE_URL="https://jcblfgrcsgbdeamogzfc.supabase.co";
 const KEY="sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K";
