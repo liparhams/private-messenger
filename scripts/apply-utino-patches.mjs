@@ -4,7 +4,7 @@ function replaceOnce(file, find, replacement, label) {
   let source = fs.readFileSync(file, 'utf8');
   if (source.includes(replacement)) return false;
   if (!source.includes(find)) {
-    console.log(`Skipping already-changed or unavailable patch: ${label}`);
+    console.log(`Skipping unavailable patch: ${label}`);
     return false;
   }
   source = source.replace(find, replacement);
@@ -37,7 +37,7 @@ replaceOnce(auth, '  useEffect(() => {\n    try {\n      const savedLang = local
 replaceOnce(auth, '        <div style={{ marginTop: 18, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>', '        {registrationEnabled && <div style={{ marginTop: 16, textAlign: "center" }}><a href="/register/" style={{ color: "#60a5fa", fontWeight: 750, fontSize: 13, textDecoration: "none" }}>ساخت حساب جدید</a></div>}\n        <div style={{ marginTop: 12, textAlign: "center", color: colors.muted, fontSize: 10 }}>Username access · Messenger</div>', 'registration link');
 
 const admin = 'app/admin/page.js';
-replaceOnce(admin, 'server_error:"ارتباط با سرور برقرار نشد. اینترنت یا Supabase را بررسی کن."', 'server_error:"ارتباط با سرور برقرار نشد. اینترنت یا Supabase را بررسی کن.","Failed to fetch":"ارتباط با سرور برقرار نشد. اتصال اینترنت یا Supabase را بررسی کن.","Load failed":"ارتباط با سرور برقرار نشد. اتصال اینترنت یا Supabase را بررسی کن."', 'admin network error');
-replaceOnce(admin, 'updated_by:user.id', '', 'remove unsupported updated_by field');
+replaceOnce(admin, 'import "./admin.css";', 'import "./admin.css";\nimport SupportTickets from "./SupportTickets";', 'admin tickets import');
+replaceOnce(admin, '{tab==="messages"&&<div className="admin-card">', '{tab==="tickets"&&<SupportTickets/>}\n{tab==="messages"&&<div className="admin-card">', 'admin tickets panel');
 
 console.log('Utino patches completed');
