@@ -84,7 +84,7 @@ export default function SettingsPage() {
       <div className="settings-shell">
         <header className="settings-topbar">
           <a className="settings-back" href="/messenger/" aria-label="بازگشت" title="بازگشت"><Icon name="back" size={20} animated /></a>
-          <div className="settings-topbar-title"><span className="settings-topbar-icon"><Icon name="settings" size={17} animated /></span><span><strong>تنظیمات</strong><small>UTINOCHATV1</small></span></div>
+          <div className="settings-topbar-title"><span className="settings-topbar-icon"><Icon name="settings" size={17} animated /></span><span><strong>تنظیمات</strong><small>utino chat</small></span></div>
           <a className="settings-home" href="/messenger/"><Icon name="chat" size={16} /> <span>مسنجر</span></a>
         </header>
 
