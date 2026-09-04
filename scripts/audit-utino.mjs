@@ -30,6 +30,7 @@ if (!/unoptimized:\s*true/.test(next)) failures.push("next:image-unoptimized");
 const wrangler = read("wrangler.jsonc");
 if (!/\"directory\"\s*:\s*\"\.\/out\"/.test(wrangler)) failures.push("wrangler:assets-out");
 if (!/single-page-application/.test(wrangler)) failures.push("wrangler:spa-fallback");
+if (!/\"name\"\s*:\s*\"utino-chat\"/.test(wrangler)) failures.push("wrangler:worker-name");
 
 const messenger = read("app/messenger/ChatWorkspaceImpl.js");
 for (const token of [
@@ -45,7 +46,7 @@ for (const token of [
 ]) if (!messenger.includes(token)) failures.push(`messenger:${token}`);
 
 const settings = read("app/settings/page.js");
-for (const token of ["update_my_profile", "get_my_profile", "localStorage", "UTINOCHATV1"]) {
+for (const token of ["update_my_profile", "get_my_profile", "localStorage", "utino chat"]) {
   if (!settings.includes(token)) failures.push(`settings:${token}`);
 }
 
@@ -77,9 +78,9 @@ for (const file of sourceFiles) {
 }
 
 if (failures.length) {
-  console.error("UTINOCHATV1 audit failed:");
+  console.error("utino chat static audit failed:");
   for (const failure of failures) console.error(`- ${failure}`);
   process.exit(1);
 }
 
-console.log(`UTINOCHATV1 static audit passed (${sourceFiles.length} source files scanned).`);
+console.log(`utino chat static audit passed (${sourceFiles.length} source files scanned).`);
