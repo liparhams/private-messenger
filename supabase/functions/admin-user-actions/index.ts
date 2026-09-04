@@ -4,7 +4,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 const url = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const admin = createClient(url, serviceKey, { auth: { autoRefreshToken: false, persistSession: false } });
-const cors = { "access-control-allow-origin": "*", "access-control-allow-methods": "POST, OPTIONS", "access-control-allow-headers": "authorization, x-client-info, apikey, content-type", "access-control-max-age": "86400", "content-type": "application/json" };
+const cors = { "access-control-allow-origin": "*", "access-control-allow-methods": "POST, OPTIONS", "access-control-allow-headers": "authorization, x-client-info, apikey, content-type, x-retry-count, traceparent, tracestate, baggage", "access-control-max-age": "86400", "content-type": "application/json" };
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: cors });
 const emailFor = (u: string) => `${u.trim().toLowerCase()}@utino.chat`;
 const validUsername = (u: string) => /^[a-z0-9_]{3,20}$/.test(u);
