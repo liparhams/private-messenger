@@ -12,7 +12,7 @@ jobs:
     if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
-      - name: Copy Telegram Web A source exactly
+      - name: Import upstream Telegram Web A without modifications
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
