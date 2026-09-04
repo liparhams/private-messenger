@@ -1,1 +1,0 @@
-UTINOCHATV1 profile bio UI is presented locally until a server-side bio field is introduced.
