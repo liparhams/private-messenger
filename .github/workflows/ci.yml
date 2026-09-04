@@ -1,4 +1,4 @@
-name: UTINOCHATV1 Build and Deploy
+name: UTINO Chat Build and Deploy
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: utinochatv1-${{ github.ref }}
+  group: utino-chat-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -34,7 +34,7 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Static architecture and secret audit
         run: npm run audit
-      - name: Finalize UTINOCHATV1 source
+      - name: Finalize UTINO Chat source
         run: node scripts/finalize-utino.mjs
       - name: Production build
         run: npm run build
@@ -45,14 +45,14 @@ jobs:
           test -f out/index.html
           test -f out/404.html
           test -d out/_next/static
-          grep -q "UTINOCHATV1" out/index.html
+          grep -qi "utino chat" out/index.html
           test "$(find out -type f | wc -l)" -gt 10
       - name: Validate Wrangler and Cloudflare dry-run
         run: npx wrangler deploy --dry-run --config wrangler.jsonc
       - name: Upload validated build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: utinochatv1-static-export
+          name: utino-chat-static-export
           path: out
           if-no-files-found: error
           retention-days: 3
@@ -76,7 +76,7 @@ jobs:
       - name: Download validated build artifact
         uses: actions/download-artifact@v4
         with:
-          name: utinochatv1-static-export
+          name: utino-chat-static-export
           path: out
       - name: Verify deployment artifact
         shell: bash
@@ -85,7 +85,7 @@ jobs:
           test -f out/index.html
           test -f out/404.html
           test -d out/_next/static
-          grep -q "UTINOCHATV1" out/index.html
+          grep -qi "utino chat" out/index.html
       - name: Deploy validated artifact to Cloudflare Workers
         run: npx wrangler deploy --config wrangler.jsonc
         env:
