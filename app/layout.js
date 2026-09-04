@@ -6,8 +6,8 @@ import "./final-polish.css";
 import "./auth-final.css";
 
 export const metadata = {
-  title: "UTINOCHATV1",
-  description: "UTINOCHATV1 private messaging platform",
+  title: "utino chat",
+  description: "utino chat private messaging platform",
   robots: { index: false, follow: false, nocache: true },
 };
 
