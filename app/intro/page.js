@@ -6,30 +6,143 @@ import "../utino-system.css";
 import "./intro.css";
 import "./intro-polish.css";
 import "./intro-v2.css";
+import "./telegram-style.css";
 
-const copy={fa:{login:"ورود",register:"ثبت‌نام",menu:"منو",features:"ویژگی‌ها",badge:"نسخه UTINOCHATV1",title:<>پیام‌رسان مدرن برای گفتگو،<br/>گروه و کانال.</>,text:"یک فضای سریع و منظم برای گفت‌وگوی مستقیم، گروه‌ها و کانال‌ها، با تمرکز روی تجربه‌ای روان، خصوصی و قابل اتکا.",start:"شروع استفاده",privateTitle:"گفت‌وگوی خصوصی",privateText:"گفت‌وگوی مستقیم با رابطی خلوت و سریع.",groupsTitle:"گروه‌ها",groupsText:"ساخت گروه، انتخاب اعضا و مدیریت گفتگو در یک مسیر ساده.",channelsTitle:"کانال‌ها",channelsText:"ساخت کانال عمومی یا خصوصی و انتشار محتوا برای اعضا.",supportTitle:"پشتیبانی رسمی",supportText:"ارتباط مستقیم با پشتیبانی رسمی در صورت نیاز.",registerTitle:"شروع با UTINOCHATV1",registerText:"حساب خودت را بساز و وارد فضای پیام‌رسان شو.",featuresTitle:"ویژگی‌های UTINOCHATV1",footer:"UTINOCHATV1 • پیام‌رسان یوتینو"},en:{login:"Sign in",register:"Create account",menu:"Menu",features:"Features",badge:"UTINOCHATV1",title:<>Modern messaging for chats,<br/>groups and channels.</>,text:"A focused messaging space for direct chats, groups and channels, built for a smooth, private and dependable experience.",start:"Get started",privateTitle:"Private chats",privateText:"Fast direct conversations with a focused interface.",groupsTitle:"Groups",groupsText:"Create groups, choose members and manage conversations simply.",channelsTitle:"Channels",channelsText:"Create public or private channels and publish to members.",supportTitle:"Official support",supportText:"Direct access to official support when you need it.",registerTitle:"Start with UTINOCHATV1",registerText:"Create your account and enter the messenger.",featuresTitle:"UTINOCHATV1 features",footer:"UTINOCHATV1 • Utino Messenger"}};
+const copy = {
+  fa: {
+    login: "ورود", register: "ساخت حساب", menu: "منو", features: "ویژگی‌ها", badge: "UTINOCHATV1",
+    title: <>پیام‌رسانی که<br />ساده کار می‌کند.</>,
+    text: "گفت‌وگوی سریع، گروه و کانال در یک فضای خلوت و مدرن. بدون شماره تلفن، با ورود نام کاربری و رمز عبور.",
+    start: "شروع استفاده", view: "آشنایی بیشتر", access: "ورود به حساب",
+    why: "چرا UTINOCHATV1؟", whyText: "ساختار محصول از الگوهای جاافتاده‌ی کلاینت‌های وب و دسکتاپ پیام‌رسان‌ها الهام گرفته شده، اما تجربه و هویت خودش را دارد.",
+    privateTitle: "گفت‌وگوی خصوصی", privateText: "چت مستقیم با وضعیت ارسال، ویرایش و دیده‌شدن و رابطی سریع برای استفاده روزمره.",
+    groupsTitle: "گروه‌ها", groupsText: "ساخت گروه، مدیریت اعضا، نقش‌ها و فضای مشترک گفتگو با کنترل روشن و ساده.",
+    channelsTitle: "کانال‌ها", channelsText: "انتشار محتوا در کانال‌های عمومی یا خصوصی با فهرست اعضا و مدیریت اختصاصی.",
+    supportTitle: "پشتیبانی", supportText: "بخش پشتیبانی یکپارچه برای ثبت و پیگیری درخواست‌ها در خود پلتفرم.",
+    capabilityTitle: "یک پیام‌رسان کامل در مرورگر", capabilityText: "تمرکز این نسخه روی تجربه‌ای شبیه کلاینت‌های مدرن پیام‌رسان است: پاسخ‌گویی سریع، چیدمان دو ستونه، پنل‌های تمیز و رفتار مناسب موبایل.",
+    caps: [["همگام‌سازی", "وضعیت گفتگوها و پیام‌ها با Supabase و رویدادهای realtime."],["رسانه", "ارسال تصویر، فایل، صدا و ویدئو با محدودیت و اعتبارسنجی سمت کلاینت."],["جستجو", "جست‌وجوی کاربران و اجتماعات عمومی با نمایش زنده نتایج."],["رابط کاربری", "تم تاریک و روشن، فارسی و انگلیسی، طراحی واکنش‌گرا و منوهای یکپارچه."],["مدیریت", "پنل مدیریت برای کاربران، گفتگوها، پیام‌ها، تنظیمات و پشتیبانی."],["امنیت حساب", "احراز هویت با نام کاربری و رمز عبور، بدون نمایش یا درخواست شماره تلفن."]],
+    newsTitle: "ساخته‌شده برای امروز", news: [["SIMPLE", "شروع سریع", "از صفحه اصلی تا اولین گفتگو، مسیر کاربر کوتاه و واضح نگه داشته شده است."],["PRIVATE", "حساب با نام کاربری", "کاربر با شناسه و رمز خودش وارد می‌شود و شماره تلفن بخشی از تجربه نیست."],["MODERN", "تجربه وب", "چیدمان، انیمیشن‌های محدود و نقاط تعاملی برای سرعت و تمرکز طراحی شده‌اند."]],
+    footer: "UTINOCHATV1 • پیام‌رسان یوتینو"
+  },
+  en: {
+    login: "Sign in", register: "Create account", menu: "Menu", features: "Features", badge: "UTINOCHATV1",
+    title: <>Messaging that<br />just works.</>,
+    text: "Fast chats, groups and channels in a focused modern space. No phone number required, just a username and password.",
+    start: "Get started", view: "Explore", access: "Sign in",
+    why: "Why UTINOCHATV1?", whyText: "The product architecture takes cues from mature web and desktop messenger clients while keeping its own visual identity and account model.",
+    privateTitle: "Private chats", privateText: "Direct conversations with send, edit and seen states in a fast everyday interface.",
+    groupsTitle: "Groups", groupsText: "Create groups, manage members and roles, and keep shared conversations easy to control.",
+    channelsTitle: "Channels", channelsText: "Publish to public or private channels with dedicated member and management views.",
+    supportTitle: "Support", supportText: "Built-in support for creating and following requests without leaving the platform.",
+    capabilityTitle: "A complete messenger in your browser", capabilityText: "This version focuses on the interaction model of modern messaging clients: responsive layouts, fast chat loading, clean panels and mobile behavior.",
+    caps: [["Sync", "Conversation and message state powered by Supabase realtime events."],["Media", "Image, file, audio and video uploads with client-side validation."],["Search", "Live search across users and discoverable public communities."],["Interface", "Dark/light themes, Persian/English, responsive layouts and unified menus."],["Admin", "Management for users, conversations, messages, settings and support."],["Account", "Username/password authentication with no phone number in the login flow."]],
+    newsTitle: "Built for today", news: [["SIMPLE", "Fast start", "The path from landing page to first conversation stays short and obvious."],["PRIVATE", "Username accounts", "Users sign in with their own identifier and password, without a phone number step."],["MODERN", "Web-first", "Layout, restrained motion and interaction points are designed around speed and focus."]],
+    footer: "UTINOCHATV1 • Utino Messenger"
+  }
+};
 
-export default function IntroPage(){
- const[lang,setLang]=useState("fa"),[dark,setDark]=useState(true),[modal,setModal]=useState(null);
- const t=copy[lang];
- useEffect(()=>{try{const l=localStorage.getItem("utino-language"),th=localStorage.getItem("utino-theme");if(l==="fa"||l==="en")setLang(l);if(th==="light"||th==="dark")setDark(th==="dark")}catch{}},[]);
- useEffect(()=>{try{localStorage.setItem("utino-language",lang);localStorage.setItem("utino-theme",dark?"dark":"light");document.documentElement.dataset.theme=dark?"dark":"light"}catch{}},[lang,dark]);
- useEffect(()=>{if(!modal)return;const f=e=>{if(e.key==="Escape")setModal(null)};window.addEventListener("keydown",f);return()=>window.removeEventListener("keydown",f)},[modal]);
- const close=()=>setModal(null);
- return <main className={`intro-page platform-page ${dark?"theme-dark":"theme-light"}`} dir={lang==="fa"?"rtl":"ltr"}>
-  <div className="intro-glow intro-glow-one"/><div className="intro-glow intro-glow-two"/>
-  <nav className="intro-nav"><a className="intro-brand" href="/"><span className="intro-logo">U</span><span>UTINOCHATV1</span></a><div className="intro-nav-actions">
-   <button className="utino-control" onClick={()=>setLang(v=>v==="fa"?"en":"fa")} title="تغییر زبان">{lang==="fa"?"EN":"فا"}</button>
-   <button className="utino-control" onClick={()=>setDark(v=>!v)} title={dark?"حالت روشن":"حالت تاریک"}>{dark?"روشن":"تاریک"}</button>
-   <button className="utino-control intro-menu-button" onClick={()=>setModal("menu")}>☰ {t.menu}</button>
-   <a className="nav-login" href="/login">{t.login}</a><button className="nav-register" onClick={()=>setModal("register")}>{t.register}</button>
-  </div></nav>
-  <section className="intro-hero"><div className="hero-copy"><div className="intro-badge"><span/>{t.badge}</div><h1>{t.title}</h1><p>{t.text}</p><div className="hero-actions"><button className="primary-cta" onClick={()=>setModal("register")}>{t.start}<span>↗</span></button><button className="secondary-cta" onClick={()=>setModal("features")}>{t.features}</button></div><div className="hero-note"><span className="status-dot"/> {lang==="fa"?"طراحی شده برای تجربه‌ای سریع و خلوت":"Designed for a focused, fast experience"}</div></div><div className="hero-preview"><div className="preview-window"><div className="preview-topbar"><span className="preview-dot"/><span/><span/></div><div className="preview-body"><aside className="preview-sidebar"><div className="preview-mini-brand">U</div><div className="preview-line wide"/><div className="preview-line"/><div className="preview-line"/><div className="preview-avatar-row"><i/><div><b/><small/></div></div><div className="preview-avatar-row"><i/><div><b/><small/></div></div><div className="preview-avatar-row"><i/><div><b/><small/></div></div></aside><div className="preview-chat"><div className="preview-chat-head"><div className="preview-avatar"/><div><b/><small/></div></div><div className="preview-messages"><span/><span className="right"/><span/><span className="right short"/><span className="right"/></div><div className="preview-input"/></div></div></div></div></section>
-  <section className="feature-grid" id="features"><article><div className="feature-icon">💬</div><h2>{t.privateTitle}</h2><p>{t.privateText}</p></article><article><div className="feature-icon">👥</div><h2>{t.groupsTitle}</h2><p>{t.groupsText}</p></article><article><div className="feature-icon">📣</div><h2>{t.channelsTitle}</h2><p>{t.channelsText}</p></article></section>
-  <footer className="intro-footer"><span>{t.footer}</span><a href="https://utino.org" target="_blank" rel="noreferrer">utino.org</a></footer>
-  {modal&&<div className="intro-modal-backdrop" role="presentation" onMouseDown={e=>e.target===e.currentTarget&&close()}><section className="intro-modal" role="dialog" aria-modal="true" aria-labelledby="intro-modal-title">
-   <header className="intro-modal-head"><strong id="intro-modal-title">{modal==="register"?t.registerTitle:modal==="features"?t.featuresTitle:t.menu}</strong><button className="intro-modal-close" onClick={close} aria-label="بستن">×</button></header>
-   {modal==="register"?<div className="intro-modal-body"><div className="intro-feature-detail"><div className="feature-detail-icon">✨</div><h3>{t.registerTitle}</h3><p>{t.registerText}</p></div><button className="intro-modal-primary" onClick={()=>location.href="/login?register=1"}>{t.register} ↗</button><button className="intro-modal-option" onClick={()=>location.href="/login"}><span className="modal-icon">🔐</span><span><b>{t.login}</b><small>{lang==="fa"?"اگر حساب داری، مستقیم وارد شو":"Already have an account? Sign in."}</small></span><span className="modal-arrow">›</span></button></div>:modal==="features"?<div className="intro-modal-body"><button className="intro-modal-option" onClick={()=>setModal("private")}><span className="modal-icon">💬</span><span><b>{t.privateTitle}</b><small>{t.privateText}</small></span><span className="modal-arrow">›</span></button><button className="intro-modal-option" onClick={()=>setModal("groups")}><span className="modal-icon">👥</span><span><b>{t.groupsTitle}</b><small>{t.groupsText}</small></span><span className="modal-arrow">›</span></button><button className="intro-modal-option" onClick={()=>setModal("channels")}><span className="modal-icon">📣</span><span><b>{t.channelsTitle}</b><small>{t.channelsText}</small></span><span className="modal-arrow">›</span></button><button className="intro-modal-option" onClick={()=>setModal("support")}><span className="modal-icon">🛟</span><span><b>{t.supportTitle}</b><small>{t.supportText}</small></span><span className="modal-arrow">›</span></button></div>:modal==="menu"?<div className="intro-modal-body"><button className="intro-modal-option" onClick={()=>setModal("register")}><span className="modal-icon">✨</span><span><b>{t.register}</b><small>{t.registerText}</small></span><span className="modal-arrow">›</span></button><button className="intro-modal-option" onClick={()=>{close();document.getElementById("features")?.scrollIntoView({behavior:"smooth"})}}><span className="modal-icon">🧩</span><span><b>{t.features}</b><small>{t.featuresTitle}</small></span><span className="modal-arrow">›</span></button><a className="intro-modal-option" href="/login"><span className="modal-icon">🔐</span><span><b>{t.login}</b><small>UTINOCHATV1</small></span><span className="modal-arrow">›</span></a></div>:<div className="intro-modal-body"><div className="intro-feature-detail"><div className="feature-detail-icon">{modal==="private"?"💬":modal==="groups"?"👥":modal==="channels"?"📣":"🛟"}</div><h3>{modal==="private"?t.privateTitle:modal==="groups"?t.groupsTitle:modal==="channels"?t.channelsTitle:t.supportTitle}</h3><p>{modal==="private"?t.privateText:modal==="groups"?t.groupsText:modal==="channels"?t.channelsText:t.supportText}</p></div><button className="intro-modal-primary" onClick={()=>setModal("features")}>{lang==="fa"?"بازگشت به ویژگی‌ها":"Back to features"}</button></div>}
-  </section></div>}
- </main>
+export default function IntroPage() {
+  const [lang, setLang] = useState("fa");
+  const [dark, setDark] = useState(true);
+  const [modal, setModal] = useState(null);
+  const t = copy[lang];
+
+  useEffect(() => {
+    try {
+      const l = localStorage.getItem("utino-language");
+      const th = localStorage.getItem("utino-theme");
+      if (l === "fa" || l === "en") setLang(l);
+      if (th === "light" || th === "dark") setDark(th === "dark");
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("utino-language", lang);
+      localStorage.setItem("utino-theme", dark ? "dark" : "light");
+      document.documentElement.dataset.theme = dark ? "dark" : "light";
+      document.documentElement.lang = lang === "fa" ? "fa" : "en";
+      document.documentElement.dir = lang === "fa" ? "rtl" : "ltr";
+    } catch {}
+  }, [lang, dark]);
+
+  useEffect(() => {
+    if (!modal) return;
+    const close = (event) => event.key === "Escape" && setModal(null);
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [modal]);
+
+  return (
+    <main className={`intro-page platform-page ${dark ? "theme-dark" : "theme-light"}`} dir={lang === "fa" ? "rtl" : "ltr"}>
+      <header className="intro-topline">
+        <nav className="intro-nav">
+          <a className="intro-brand" href="/" aria-label="UTINOCHATV1"><span className="intro-logo">U</span><span>UTINOCHATV1</span></a>
+          <div className="intro-nav-actions">
+            <button className="utino-control intro-menu-button" type="button" onClick={() => setModal("menu")}>☰ {t.menu}</button>
+            <button className="utino-control" type="button" onClick={() => setLang((v) => v === "fa" ? "en" : "fa")}>{lang === "fa" ? "EN" : "فا"}</button>
+            <button className="utino-control" type="button" onClick={() => setDark((v) => !v)}>{dark ? "☀" : "☾"}</button>
+            <a className="nav-login" href="/login">{t.login}</a>
+            <a className="nav-register" href="/login?register=1">{t.register}</a>
+          </div>
+        </nav>
+      </header>
+
+      <section className="intro-hero">
+        <div className="hero-copy">
+          <div className="intro-badge"><span />{t.badge}</div>
+          <h1>{t.title}</h1>
+          <p>{t.text}</p>
+          <div className="hero-actions">
+            <a className="primary-cta" href="/login?register=1">{t.start} ↗</a>
+            <button className="secondary-cta" type="button" onClick={() => document.getElementById("why")?.scrollIntoView({ behavior: "smooth" })}>{t.view}</button>
+          </div>
+          <div className="hero-note"><span className="status-dot" />{lang === "fa" ? "نسخه وب • فارسی و انگلیسی • دسکتاپ و موبایل" : "Web app • Persian and English • desktop and mobile"}</div>
+        </div>
+        <div className="hero-preview" aria-hidden="true">
+          <div className="preview-window">
+            <div className="preview-topbar"><span className="preview-dot" /><span /><span /></div>
+            <div className="preview-body">
+              <aside className="preview-sidebar"><div className="preview-mini-brand">U</div><div className="preview-line wide" /><div className="preview-line" /><div className="preview-avatar-row"><i /><div><b /><small /></div></div><div className="preview-avatar-row"><i /><div><b /><small /></div></div><div className="preview-avatar-row"><i /><div><b /><small /></div></div></aside>
+              <div className="preview-chat"><div className="preview-chat-head"><div className="preview-avatar" /><div><b /><small /></div></div><div className="preview-messages"><span /><span className="right" /><span /><span className="right short" /><span className="right" /></div><div className="preview-input" /></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="intro-section" id="why">
+        <div className="intro-section-head"><span className="intro-section-kicker">UTINOCHATV1</span><h2>{t.why}</h2><p>{t.whyText}</p></div>
+        <div className="feature-grid">
+          <article><div className="feature-icon">💬</div><h2>{t.privateTitle}</h2><p>{t.privateText}</p></article>
+          <article><div className="feature-icon">👥</div><h2>{t.groupsTitle}</h2><p>{t.groupsText}</p></article>
+          <article><div className="feature-icon">📣</div><h2>{t.channelsTitle}</h2><p>{t.channelsText}</p></article>
+        </div>
+      </section>
+
+      <section className="intro-section">
+        <div className="intro-section-head"><span className="intro-section-kicker">PRODUCT</span><h2>{t.capabilityTitle}</h2><p>{t.capabilityText}</p></div>
+        <div className="capability-grid">{t.caps.map(([title, body], index) => <article className="capability" key={title}><div className="mini-icon">{["↔","◉","⌕","◌","▣","@"][index]}</div><div><strong>{title}</strong><span>{body}</span></div></article>)}</div>
+      </section>
+
+      <section className="intro-section">
+        <div className="intro-section-head"><span className="intro-section-kicker">EXPERIENCE</span><h2>{t.newsTitle}</h2></div>
+        <div className="intro-news">{t.news.map(([tag, title, body]) => <article className="news-card" key={tag}><small>{tag}</small><h3>{title}</h3><p>{body}</p></article>)}</div>
+      </section>
+
+      <footer className="intro-footer"><span>{t.footer}</span><span>{lang === "fa" ? "ساخته‌شده برای وب مدرن" : "Built for the modern web"}</span></footer>
+
+      {modal && (
+        <div className="intro-modal-backdrop" role="presentation" onMouseDown={(event) => event.target === event.currentTarget && setModal(null)}>
+          <section className="intro-modal" role="dialog" aria-modal="true" aria-label={t.menu}>
+            <header className="intro-modal-head"><strong>{t.menu}</strong><button className="intro-modal-close" type="button" onClick={() => setModal(null)}>×</button></header>
+            <div className="intro-modal-body">
+              <a className="intro-modal-option" href="/login?register=1"><span className="modal-icon">✨</span><span><b>{t.register}</b><small>{t.start}</small></span><span className="modal-arrow">›</span></a>
+              <a className="intro-modal-option" href="/login"><span className="modal-icon">🔐</span><span><b>{t.login}</b><small>{t.access}</small></span><span className="modal-arrow">›</span></a>
+              <button className="intro-modal-option" type="button" onClick={() => { setModal(null); document.getElementById("why")?.scrollIntoView({ behavior: "smooth" }); }}><span className="modal-icon">🧩</span><span><b>{t.features}</b><small>{t.why}</small></span><span className="modal-arrow">›</span></button>
+            </div>
+          </section>
+        </div>
+      )}
+    </main>
+  );
 }
