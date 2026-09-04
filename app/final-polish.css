@@ -1,0 +1,41 @@
+/* UTINOCHATV1 final platform layer: one consistent chrome across auth, messenger and admin. */
+:root{--uc-accent:#3390ec;--uc-bg:#0b1118;--uc-surface:#121a23;--uc-surface2:#17222d;--uc-line:rgba(255,255,255,.085);--uc-text:#f5f7fa;--uc-muted:#8e9baa;}
+html[data-theme="light"]{--uc-bg:#eef4f8;--uc-surface:#fff;--uc-surface2:#f4f7fa;--uc-line:rgba(18,37,54,.09);--uc-text:#14212d;--uc-muted:#6d7d8c;}
+
+/* Login: support belongs in the top chrome, not as a bottom card. */
+.auth-card{position:relative;}
+.auth-support{position:absolute!important;top:27px;inset-inline-start:70px;width:40px!important;height:38px!important;min-height:38px!important;margin:0!important;padding:0!important;border-radius:11px!important;display:grid!important;place-items:center!important;z-index:5;}
+.auth-support .support-copy,.auth-support .support-arrow{display:none!important;}
+.auth-support .support-avatar{width:25px!important;height:25px!important;border-radius:8px!important;font-size:11px!important;box-shadow:none!important;}
+.auth-head{padding-inline-end:0;}
+
+/* Messenger: no bottom floating support launcher. */
+.uc-sidebar-foot{display:none!important;}
+.uc-messenger-menu{top:10px!important;inset-inline-end:12px!important;z-index:1400!important;}
+.uc-topbar-actions{display:flex;align-items:center;gap:6px;}
+.uc-topbar-actions .uc-profile-trigger{position:static!important;width:42px!important;height:42px!important;margin:0!important;border:1px solid var(--line,#2a3948)!important;border-radius:12px!important;background:var(--panel,#17212b)!important;color:var(--text,#e7edf4)!important;box-shadow:0 8px 24px rgba(0,0,0,.14)!important;}
+.uc-topbar-actions .uc-profile-trigger:hover{background:var(--panel2,#202d3a)!important;transform:translateY(-1px);}
+.uc-shell .uc-sidebar-head{min-height:64px!important;padding:10px 14px!important;border-bottom:1px solid var(--line,#2a3948)!important;}
+.uc-shell .uc-brand{min-height:44px!important;border-radius:12px!important;}
+.uc-shell .uc-chat-head{height:68px!important;min-height:68px!important;padding:8px 12px!important;}
+
+/* Admin: compact professional console chrome. */
+.admin-shell{min-height:100svh!important;background:var(--uc-bg)!important;color:var(--uc-text)!important;}
+.admin-sidebar{background:var(--uc-surface)!important;border-color:var(--uc-line)!important;}
+.admin-main{min-width:0!important;}
+.admin-main>.admin-header{position:sticky!important;top:0!important;z-index:40!important;min-height:64px!important;margin:0 0 14px!important;padding:8px 0!important;background:color-mix(in srgb,var(--uc-bg) 90%,transparent)!important;backdrop-filter:blur(18px);}
+.admin-header h1{font-size:23px!important;line-height:1.2!important;}
+.admin-header span{font-size:10px!important;color:var(--uc-muted)!important;}
+.admin-header>button{width:42px!important;height:42px!important;border:1px solid var(--uc-line)!important;border-radius:12px!important;background:var(--uc-surface)!important;color:var(--uc-text)!important;}
+.admin-card,.admin-stat{border-color:var(--uc-line)!important;background:var(--uc-surface)!important;}
+.admin-error,.admin-success{margin-bottom:12px!important;}
+
+@media(max-width:720px){
+ .auth-support{top:20px!important;inset-inline-start:58px;width:38px!important;height:36px!important;min-height:36px!important;}
+ .uc-messenger-menu{top:8px!important;inset-inline-end:8px!important;}
+ .uc-topbar-actions .uc-profile-trigger,.uc-topbar-actions .uc-menu-trigger{width:38px!important;height:38px!important;border-radius:11px!important;}
+ .uc-shell .uc-chat-head{height:60px!important;min-height:60px!important;}
+ .admin-main>.admin-header{min-height:56px!important;}
+ .admin-header h1{font-size:19px!important;}
+}
+@media(prefers-reduced-motion:reduce){.uc-topbar-actions .uc-profile-trigger{transform:none!important;}}
