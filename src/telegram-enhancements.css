@@ -1,0 +1,38 @@
+/* Telegram-inspired UI layer for utinochat. Keeps existing application logic intact. */
+:root{--tg-blue:#3390ec;--tg-bg:#d7e2e8;--tg-panel:#fff;--tg-muted:#7d8b95;--tg-border:#d8e1e6;--tg-hover:#f0f3f5;--tg-out:#d9fdd3;--tg-shadow:0 12px 36px rgba(31,48,60,.16)}
+html,body,#root{height:100%;overflow:hidden}
+button,input{touch-action:manipulation}
+.messenger{background:var(--tg-bg)!important;grid-template-columns:minmax(320px,380px) minmax(0,1fr)!important}
+.sidebar{box-shadow:1px 0 0 rgba(0,0,0,.04);z-index:12}
+.sidehead{padding:9px 10px!important}
+.search{border-radius:20px!important;height:42px!important;background:#eef1f3!important}
+.search input{font-size:13px!important}
+.tabs{height:43px!important}
+.tabs>*{font-size:12px!important}
+.chatlist{padding:4px 6px!important}
+.chatitem{min-height:68px!important;border-radius:10px!important;padding:9px 10px!important}
+.chatitem strong{font-size:14px!important}
+.chatitem small{font-size:11px!important}
+.chatitem>svg{opacity:.7}
+.chatitem.selected{background:var(--tg-blue)!important}
+.chatitem:not(.selected):hover{background:#eef2f4!important}
+.chat{background:var(--tg-bg)!important}
+.chathead{height:64px!important;box-shadow:0 1px 2px rgba(0,0,0,.04);border:0!important}
+.chattools button{width:42px!important;height:42px!important}
+.messages{padding:18px max(18px,8vw)!important;background-color:#dbe6eb!important;background-image:radial-gradient(rgba(102,126,140,.16) 1px,transparent 1px)!important;background-size:22px 22px!important}
+.msgrow{margin:3px 0!important}
+.bubble{border-radius:14px!important;padding:7px 12px 5px!important;box-shadow:0 1px 2px rgba(20,40,50,.12)!important}
+.mine .bubble{background:var(--tg-out)!important}
+.composer{padding:8px 10px!important;gap:6px!important}
+.composer input{height:44px!important;border-radius:22px!important;background:#fff!important;border:1px solid rgba(0,0,0,.03)!important}
+.composer>button{width:44px!important;height:44px!important}
+.composer .send{box-shadow:0 3px 10px rgba(51,144,236,.25)}
+.drawer,.contextmenu,.modal{box-shadow:var(--tg-shadow)!important}
+.drawer{border-radius:0 0 12px 0}
+.contextmenu{border-radius:12px!important;overflow:hidden;padding:5px!important}
+.contextmenu button{min-height:42px!important;font-size:12px!important}
+.modalshade{backdrop-filter:blur(3px);background:rgba(25,42,53,.34)!important}
+.modal{border-radius:18px!important}
+.empty{opacity:.9}
+@media(max-width:760px){.messenger{grid-template-columns:100% 100%!important}.sidebar.hasselection{transform:translateX(0)!important}.sidebar{transition:transform .2s ease}.chat{transition:transform .2s ease}.messages{padding:15px 10px!important}.bubble{max-width:86%!important}.chattools button{display:none}.chattools button:last-child{display:grid}.back{display:grid!important}.drawer{width:min(320px,88vw)!important}}
+@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
