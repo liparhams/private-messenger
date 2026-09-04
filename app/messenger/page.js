@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import "../utino-system.css";
 import "./ux-polish.css";
 import "./messenger-menu.css";
+import "./platform-ui.css";
 import ChatWorkspace from "./ChatWorkspace";
 
 function MessengerMenu() {
