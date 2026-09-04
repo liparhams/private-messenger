@@ -43,7 +43,7 @@ Deno.serve(async req => {
       const { data: created, error: createError } = await admin.auth.admin.createUser({ email: emailFor(username), password, email_confirm: true, user_metadata: { username, display_name: displayName } });
       if (createError || !created.user) {
         const m = String(createError?.message ?? "").toLowerCase();
-        return json({ error: m.includes("already") || m.includes("exists") || m.includes("duplicate") ? "username_exists" : "user_create_failed" }, 400);
+        return json({ error: m.includes("already") || m.includes("exists") || m.includes("duplicate") || m.includes("unique") ? "username_exists" : "user_create_failed" }, 400);
       }
       const userId = created.user.id;
       const { error: profileError } = await admin.from("profiles").upsert({ id: userId, username, display_name: displayName, role, is_verified: verification !== "none", verification, is_banned: false, banned_until: null }, { onConflict: "id" });
@@ -52,7 +52,11 @@ Deno.serve(async req => {
         return json({ error: profileError.code === "23505" ? "username_exists" : "profile_create_failed" }, 400);
       }
       const { error: logError } = await admin.from("admin_logs").insert({ admin_id: caller.id, action: "create_user", target_user_id: userId, details: { username, role, verification } });
-      if (logError) return json({ error: "audit_log_failed" }, 500);
+      if (logError) {
+        await admin.from("profiles").delete().eq("id", userId);
+        await admin.auth.admin.deleteUser(userId);
+        return json({ error: "audit_log_failed" }, 500);
+      }
       return json({ ok: true, user_id: userId }, 201);
     }
 
