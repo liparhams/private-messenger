@@ -5,7 +5,6 @@ import "./ux-polish.css";
 import "./profile-panel.css";
 import ChatWorkspace from "./ChatWorkspace";
 import SupportLauncher from "./SupportLauncher";
-import ProfilePanel from "./ProfilePanel";
 
 function MessengerChrome(){
   const [dark,setDark]=useState(true);
@@ -29,9 +28,10 @@ function MessengerChrome(){
     return()=>window.removeEventListener("utino-theme-change",sync);
   },[]);
   return <>
-    <button className="uc-theme-toggle" type="button" onClick={()=>setDark(v=>!v)} aria-label={dark?"فعال کردن حالت روشن":"فعال کردن حالت تاریک"}>{dark?"☼":"◐"}</button>
+    <button className="uc-theme-toggle" type="button" onClick={()=>setDark(v=>!v)} aria-label={dark?"فعال کردن حالت روشن":"فعال کردن حالت تاریک"}>
+      <span aria-hidden="true">{dark?"☼":"◐"}</span>
+    </button>
     <ChatWorkspace/>
-    <ProfilePanel/>
     <SupportLauncher/>
   </>;
 }
