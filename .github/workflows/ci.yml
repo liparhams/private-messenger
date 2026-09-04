@@ -13,6 +13,10 @@ concurrency:
   group: utinochatv1-${{ github.ref }}
   cancel-in-progress: true
 
+env:
+  NEXT_PUBLIC_SUPABASE_URL: https://jcblfgrcsgbdeamogzfc.supabase.co
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K
+
 jobs:
   build:
     runs-on: ubuntu-latest
