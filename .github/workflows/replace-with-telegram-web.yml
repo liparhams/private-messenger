@@ -3,6 +3,7 @@ name: Replace repository with Telegram Web source
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
