@@ -3,6 +3,7 @@ import "./telegram-ui.css";
 import "./utino-design.css";
 import "./modern-platform.css";
 import "./final-polish.css";
+import "./auth-final.css";
 
 export const metadata = {
   title: "UTINOCHATV1",
