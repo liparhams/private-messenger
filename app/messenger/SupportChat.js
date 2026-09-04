@@ -1,8 +1,7 @@
 "use client";
 import{useEffect,useState}from"react";
-import{createClient}from"@supabase/supabase-js";
+import{db}from"../lib/supabase-client";
 import"./support-chat.css";
-const db=createClient("https://jcblfgrcsgbdeamogzfc.supabase.co","sb_publishable_9qBGewmR-UHx6Pc3_Gl36Q_7WhHCw2K");
 export default function SupportChat({onClose,embedded=false}){
  const[s,setS]=useState(null),[c,setC]=useState(null),[ms,setMs]=useState([]),[v,setV]=useState(""),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState("");
  const load=async()=>{const{data,error:se}=await db.auth.getSession();if(se){setError("ارتباط با حساب برقرار نشد. دوباره تلاش کنید.");setLoading(false);return}if(!data.session){setLoading(false);return}setS(data.session);let{data:chat,error:ce}=await db.from("support_chats").select("id,status").eq("user_id",data.session.user.id).maybeSingle();if(ce){setError("گفتگوی پشتیبانی در دسترس نیست.");setLoading(false);return}if(chat){setC(chat);const{data:rows,error:me}=await db.from("support_chat_messages").select("id,sender_id,content,created_at").eq("chat_id",chat.id).order("created_at");if(me)setError("پیام‌های پشتیبانی بارگذاری نشدند.");else setMs(rows||[])}setLoading(false)};
