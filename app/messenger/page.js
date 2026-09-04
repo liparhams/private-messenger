@@ -7,6 +7,7 @@ import "./messenger-menu.css";
 import "./platform-ui.css";
 import ChatWorkspace from "./ChatWorkspace";
 import SupportChat from "./SupportChat";
+import ProfilePanel from "./ProfilePanel";
 
 function MessengerMenu() {
   const [open, setOpen] = useState(false);
@@ -27,9 +28,12 @@ function MessengerMenu() {
   return (
     <>
       <div className="uc-messenger-menu">
-        <button className="uc-menu-trigger" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="menu" aria-label="منوی مسنجر" title="منوی مسنجر">
-          <span aria-hidden="true">⋮</span>
-        </button>
+        <div className="uc-topbar-actions">
+          <ProfilePanel />
+          <button className="uc-menu-trigger" type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-haspopup="menu" aria-label="منوی مسنجر" title="منوی مسنجر">
+            <span aria-hidden="true">⋮</span>
+          </button>
+        </div>
         {open && (
           <>
             <button className="uc-menu-scrim" type="button" aria-label="بستن منو" onClick={() => setOpen(false)} />
